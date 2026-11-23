@@ -29,7 +29,7 @@ export function ProductShowcase({ products, categories }: { products: Product[];
   }, [filter, products, byId]);
 
   return (
-    <section aria-labelledby="products-heading" className="relative bg-white pb-20 pt-4 sm:pb-28">
+    <section aria-labelledby="products-heading" className="relative bg-white pb-20 pt-10 sm:pb-28 sm:pt-14">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <SectionHeading id="products-heading" eyebrow="Our Products" title="Little Favourites" />
 

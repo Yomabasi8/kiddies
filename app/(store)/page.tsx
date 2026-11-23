@@ -1,5 +1,4 @@
 import { Hero } from "@/components/storefront/hero";
-import { CategoryShowcase } from "@/components/storefront/category-showcase";
 import { ProductShowcase } from "@/components/storefront/product-showcase";
 import { CollectionsBento } from "@/components/storefront/collections-bento";
 import { Testimonials } from "@/components/storefront/testimonials";
@@ -17,7 +16,6 @@ export default async function Home() {
   return (
     <main className="flex-1">
       <Hero />
-      <CategoryShowcase categories={categories} />
       <ProductShowcase products={products} categories={categories} />
       <Testimonials items={testimonials} />
       <CollectionsBento />
