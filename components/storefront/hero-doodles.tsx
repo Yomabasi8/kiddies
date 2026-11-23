@@ -60,14 +60,7 @@ export function PaperPlaneDoodle({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 200 90" className={className} aria-hidden="true">
       <g {...stroke} strokeWidth={2}>
-        {/* Dashed flight trail: the dashes march toward the plane */}
-        <motion.path
-          d="M4 70 C28 76 58 74 78 62 C94 52 88 34 76 40 C65 46 72 63 90 61 C101 59 108 52 114 46"
-          strokeDasharray="5 6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, strokeDashoffset: [0, -22] }}
-          transition={{ opacity: { delay: 1.4, duration: 0.6 }, strokeDashoffset: { duration: 1.2, repeat: Infinity, ease: "linear" } }}
-        />
+        {/* Plane and trail move as one, so the trail stays attached */}
         <motion.g
           initial={{ x: -40, y: 30, opacity: 0, rotate: -15 }}
           animate={{ x: 0, y: [0, -5, 0], opacity: 1, rotate: [0, -3, 0] }}
@@ -79,6 +72,15 @@ export function PaperPlaneDoodle({ className }: { className?: string }) {
           }}
           style={{ originX: "75%", originY: "45%" }}
         >
+          {/* Dashed flight trail ending at the middle of the plane, where the
+              folds meet; the dashes march toward it */}
+          <motion.path
+            d="M4 70 C28 76 58 74 78 62 C94 52 88 34 76 40 C65 46 72 63 90 61 C104 59 118 57 132 54"
+            strokeDasharray="5 6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, strokeDashoffset: [0, -22] }}
+            transition={{ opacity: { delay: 1.4, duration: 0.6 }, strokeDashoffset: { duration: 1.2, repeat: Infinity, ease: "linear" } }}
+          />
           <path d="M112 44 L196 6 L150 74 Z" />
           <path d="M196 6 L132 54 L150 74" />
           <path d="M132 54 L130 72 L142 62" />
