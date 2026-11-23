@@ -14,12 +14,9 @@ export default async function Home() {
     getTestimonials(),
   ]);
 
-  // Hero spotlight: featured products that have photography.
-  const spotlight = products.filter((p) => p.image).slice(0, 6);
-
   return (
     <main className="flex-1">
-      <Hero products={spotlight} categories={categories} />
+      <Hero />
       <CategoryShowcase categories={categories} />
       <ProductShowcase products={products} categories={categories} />
       <Testimonials items={testimonials} />
