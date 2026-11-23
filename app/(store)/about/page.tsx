@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Baby, HeartHandshake, ShoppingBag, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/storefront/page-header";
-import { Mascot } from "@/components/storefront/mascot";
+import { AboutMosaic } from "@/components/storefront/about-mosaic";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -44,10 +43,7 @@ export default function AboutPage() {
             Start shopping
           </Link>
         </div>
-        <div className="relative mx-auto w-full max-w-md">
-          <Image src="/images/kids-playing.png" alt="Two toddlers playing with stacking cups" width={1195} height={1433} sizes="(min-width: 1024px) 440px, 90vw" className="h-auto w-full rotate-2 drop-shadow-[0_24px_30px_rgba(0,0,0,0.18)]" />
-          <Mascot className="absolute -bottom-8 -left-6 w-28" />
-        </div>
+        <AboutMosaic />
       </section>
 
       <section className="bg-[#FDF8E9] py-20">

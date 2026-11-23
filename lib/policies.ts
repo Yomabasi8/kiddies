@@ -63,11 +63,11 @@ export const POLICIES: Record<string, Policy> = {
     updated: "November 2026",
     finalised: false,
     sections: [
-      { heading: "What we collect", body: ["When you place an order we collect your name, email address, phone number and delivery address, plus the items you order.", "If you join our mailing list we collect your email address, with your consent."] },
+      { heading: "What we collect", body: ["When you place an order we collect your name, email address, phone number and delivery address, plus the items you order."] },
       { heading: "Payments", body: ["Payments are handled by our payment provider. We never see or store your full card details."] },
-      { heading: "How we use your information", body: ["To process and deliver your order, send order updates, respond to your messages and, only if you've opted in, send you news about new arrivals and offers."] },
+      { heading: "How we use your information", body: ["To process and deliver your order, send order updates and respond to your messages."] },
       { heading: "Your cart", body: ["Your shopping cart is saved in your own browser so it's still there when you come back. It isn't shared with anyone."] },
-      { heading: "Your choices", body: ["You can unsubscribe from marketing emails at any time, and contact us to access, correct or delete your personal information."] },
+      { heading: "Your choices", body: ["Contact us at any time to access, correct or delete your personal information."] },
     ],
   },
   terms: {

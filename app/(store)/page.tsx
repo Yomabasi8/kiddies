@@ -20,8 +20,8 @@ export default async function Home() {
       <CategoryShowcase categories={categories} />
       <ProductShowcase products={products} categories={categories} />
       <Testimonials items={testimonials} />
-      <BestStartBanner />
       <CollectionsBento />
+      <BestStartBanner />
     </main>
   );
 }

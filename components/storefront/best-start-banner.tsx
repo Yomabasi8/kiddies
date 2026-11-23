@@ -18,7 +18,7 @@ const BLOCKS = [
 
 export function BestStartBanner() {
   return (
-    <section aria-labelledby="best-start-heading" className="relative bg-[#FDF8E9] px-4 pb-8 pt-24 sm:px-6 sm:pt-28">
+    <section aria-labelledby="best-start-heading" className="relative bg-[#FDF8E9] px-4 pb-40 pt-24 sm:px-6 sm:pb-52 sm:pt-28">
       <div className="relative mx-auto max-w-6xl">
         {/* Mascot perched on the card's top edge */}
         <motion.div
@@ -119,6 +119,16 @@ export function BestStartBanner() {
           </div>
         </motion.div>
       </div>
+
+      {/* Sunny hill */}
+      <svg
+        viewBox="0 0 1440 120"
+        preserveAspectRatio="none"
+        className="absolute inset-x-0 bottom-0 h-24 w-full text-sunny sm:h-32"
+        aria-hidden="true"
+      >
+        <path fill="currentColor" d="M0 120 C240 10 520 -10 720 4 C940 18 1200 40 1440 120 Z" />
+      </svg>
     </section>
   );
 }

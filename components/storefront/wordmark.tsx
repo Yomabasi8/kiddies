@@ -9,7 +9,7 @@ import { motion } from "motion/react";
  */
 const LINES = [
   ["k", "ı", "d", "d", "ı", "e", "s"],
-  ["a", "c", "c", "e", "s", "s", "o", "r", "ı", "e", "s"],
+  ["A", "c", "c", "e", "s", "s", "o", "r", "ı", "e", "s"],
 ];
 const DOT_COLORS = ["#EF6F6C", "#4FB3A5", "#7B6CF6"];
 

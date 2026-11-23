@@ -19,7 +19,7 @@ export const SAMPLE_DETAILS: Record<string, Detail> = {
     description:
       "A complete mealtime set in a soft dusty rose: a divided plate, a bowl, a straw cup with lid, a catch-all bib and little spoons and forks sized for small hands.",
     gallery: [
-      { src: "/images/products/straw-cup.jpg", alt: "Straw cup from the dusty rose set", style: "cutout" },
+      { src: "/images/products/straw-cup.png", alt: "Straw cup from the dusty rose set", style: "cutout" },
     ],
     specs: [
       { label: "Pieces", value: "8" },
@@ -32,7 +32,7 @@ export const SAMPLE_DETAILS: Record<string, Detail> = {
     description:
       "A neutral cream weaning set with a divided plate, bowl, sippy cup, bib, and spoons and forks with wooden handles.",
     gallery: [
-      { src: "/images/products/spoon-fork-set.jpg", alt: "Spoons and forks from the cream set", style: "cutout" },
+      { src: "/images/products/spoon-fork-set.png", alt: "Spoons and forks from the cream set", style: "cutout" },
     ],
     specs: [{ label: "Colour", value: "Cream" }],
     careInstructions: "Wash in warm soapy water. Do not soak the wooden handles.",
@@ -42,7 +42,7 @@ export const SAMPLE_DETAILS: Record<string, Detail> = {
     description:
       "A bright dark pink feeding set with a divided plate, bowl, straw cup, bib, and two sets of spoons and forks.",
     gallery: [
-      { src: "/images/products/silicone-bib.jpg", alt: "Bib from the dark pink set", style: "cutout" },
+      { src: "/images/products/silicone-bib.png", alt: "Bib from the dark pink set", style: "cutout" },
     ],
     specs: [
       { label: "Pieces", value: "8" },

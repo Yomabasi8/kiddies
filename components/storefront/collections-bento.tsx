@@ -102,9 +102,9 @@ const TILES: Tile[] = [
 
 export function CollectionsBento() {
   return (
-    <section aria-labelledby="collections-heading" className="relative overflow-hidden bg-[#FDF8E9] pb-40 pt-20 sm:pb-52 sm:pt-24">
+    <section aria-labelledby="collections-heading" className="relative overflow-hidden bg-[#FDF8E9] pb-6 pt-20 sm:pb-8 sm:pt-24">
       <ArcDoodle className="absolute -top-2 right-[6%] w-24 text-[#3C46C8] sm:w-32" rotate={0} />
-      <ArcDoodle className="absolute bottom-40 left-[5%] w-20 text-[#D6336C] sm:bottom-56 sm:w-28" rotate={180} />
+      <ArcDoodle className="absolute bottom-0 left-[3%] w-20 text-[#D6336C] sm:w-28" rotate={180} />
 
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
         <SectionHeading id="collections-heading" eyebrow="Explore More" title="Shop the Collections" />
@@ -125,15 +125,6 @@ export function CollectionsBento() {
         </div>
       </div>
 
-      {/* Sunny hill */}
-      <svg
-        viewBox="0 0 1440 120"
-        preserveAspectRatio="none"
-        className="absolute inset-x-0 bottom-0 h-24 w-full text-sunny sm:h-32"
-        aria-hidden="true"
-      >
-        <path fill="currentColor" d="M0 120 C240 10 520 -10 720 4 C940 18 1200 40 1440 120 Z" />
-      </svg>
     </section>
   );
 }

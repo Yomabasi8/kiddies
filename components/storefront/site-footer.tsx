@@ -2,8 +2,6 @@ import Link from "next/link";
 import { ArrowUpRight, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { getStoreSettings } from "@/lib/store-settings";
 import { BallPit } from "./ball-pit";
-import { Mascot } from "./mascot";
-import { NewsletterForm } from "./newsletter-form";
 import { Wordmark } from "./wordmark";
 
 const COLUMNS = [
@@ -45,24 +43,8 @@ export async function SiteFooter() {
   return (
     <footer className="relative overflow-hidden bg-sunny text-ink">
       <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-10">
-        {/* Newsletter */}
-        <div className="relative grid items-center gap-6 overflow-hidden rounded-[32px] bg-coral px-6 py-8 sm:px-10 sm:py-10 md:grid-cols-[1fr_1.15fr] md:gap-10">
-          <div className="flex items-center gap-5">
-            <Mascot className="hidden w-20 shrink-0 sm:block" color="#7B6CF6" />
-            <div>
-              <h2 className="font-display text-3xl font-semibold leading-tight text-white sm:text-4xl">
-                Join the Kiddies Club
-              </h2>
-              <p className="mt-1.5 text-[15px] text-white/85">
-                …be the first to hear about new arrivals and little deals.
-              </p>
-            </div>
-          </div>
-          <NewsletterForm />
-        </div>
-
         {/* Wordmark + links */}
-        <div className="mt-16 sm:mt-20">
+        <div className="mt-10 sm:mt-14">
           <Wordmark />
           <p className="mt-4 text-lg font-bold sm:text-xl">Making childhood a little more wonderful.</p>
         </div>

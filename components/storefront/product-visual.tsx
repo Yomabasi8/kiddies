@@ -32,8 +32,9 @@ export function ProductVisual({
   const photo = image && imageStyle === "photo";
   return (
     <div className={cn("relative overflow-hidden", style.bg, className)}>
-      {/* Soft blob behind the product */}
-      {!photo && (
+      {/* Soft blob framing the "photo coming soon" icon only; real product
+          photos sit on the plain tile colour. */}
+      {!image && (
       <svg viewBox="0 0 200 200" className="absolute inset-[12%] size-[76%]" aria-hidden="true">
         <path
           className={style.blob}
