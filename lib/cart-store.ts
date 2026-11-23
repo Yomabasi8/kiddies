@@ -43,6 +43,8 @@ type CartState = {
   setQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
   clear: () => void;
+  /** Apply server-validated quantities, prices and stock (0 removes). */
+  syncFromServer: (lines: { productId: string; quantity: number; unitPrice: number; stock: number }[]) => void;
 
   open: () => void;
   close: () => void;
@@ -109,6 +111,19 @@ export const useCart = create<CartState>()(
 
       clear: () => set({ items: [] }),
 
+      syncFromServer: (lines) =>
+        set((s) => {
+          const byId = new Map(lines.map((l) => [l.productId, l]));
+          return {
+            items: s.items
+              .map((i) => {
+                const l = byId.get(i.productId);
+                return l ? { ...i, quantity: l.quantity, unitPrice: l.unitPrice, stock: l.stock } : i;
+              })
+              .filter((i) => i.quantity > 0),
+          };
+        }),
+
       open: () => set({ isOpen: true }),
       close: () => set({ isOpen: false }),
 
@@ -118,7 +133,9 @@ export const useCart = create<CartState>()(
     }),
     {
       name: "kiddies-cart",
-      version: 1,
+      // v2: product ids became database UUIDs; drop carts holding old ids.
+      version: 2,
+      migrate: () => ({ items: [] }),
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ items: s.items }),
       // Hydrate after mount to avoid server/client markup mismatches.

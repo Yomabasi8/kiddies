@@ -1,8 +1,10 @@
 /**
- * Delivery configuration.
+ * Delivery helpers shared by client and server.
  *
- * TEMPORARY PLACEHOLDERS: fees and timings are not the store's real figures.
- * They will be managed in Admin → Store Settings → Delivery.
+ * Live delivery methods come from the `delivery_methods` table (see
+ * lib/delivery-data.ts). DELIVERY_METHODS below is only the seed source for
+ * `npm run db:seed`: TEMPORARY PLACEHOLDER fees/timings, not the store's
+ * real figures. They'll be managed in Admin → Store Settings → Delivery.
  */
 
 export const NIGERIAN_STATES = [
@@ -23,6 +25,7 @@ export type DeliveryMethod = {
   states: readonly string[] | null;
 };
 
+/** Seed data only. Do not read at runtime. */
 export const DELIVERY_METHODS: DeliveryMethod[] = [
   {
     id: "lagos-standard",
@@ -40,7 +43,8 @@ export const DELIVERY_METHODS: DeliveryMethod[] = [
   },
 ];
 
-export function deliveryMethodsFor(state: string | null | undefined) {
+/** Methods that serve the given state. */
+export function deliveryMethodsFor(methods: DeliveryMethod[], state: string | null | undefined) {
   if (!state) return [];
-  return DELIVERY_METHODS.filter((m) => m.states === null || m.states.includes(state));
+  return methods.filter((m) => m.states === null || m.states.includes(state));
 }

@@ -9,12 +9,12 @@ import { cn } from "@/lib/utils";
 import { ProductCard } from "./product-card";
 import { SectionHeading } from "./section-heading";
 
-/** Homepage filter groups, keyed by category id. */
+/** Homepage filter groups, keyed by category slug. */
 const FILTERS = [
-  { key: "all", label: "All", categoryIds: null },
-  { key: "feeding", label: "Feeding", categoryIds: ["cat-plates", "cat-cutlery", "cat-bibs", "cat-lunch"] },
-  { key: "drinkware", label: "Bottles & Cups", categoryIds: ["cat-bottles", "cat-cups"] },
-  { key: "toys", label: "Toys & Play", categoryIds: ["cat-educational", "cat-puzzles", "cat-other"] },
+  { key: "all", label: "All", slugs: null },
+  { key: "feeding", label: "Feeding", slugs: ["feeding-plates-bowls", "spoons-forks-cutlery", "bibs-mealtime", "lunch-boxes-containers"] },
+  { key: "drinkware", label: "Bottles & Cups", slugs: ["feeding-bottles", "cups-water-bottles"] },
+  { key: "toys", label: "Toys & Play", slugs: ["educational-toys", "puzzles-games", "other-kids-accessories"] },
 ] as const;
 
 type FilterKey = (typeof FILTERS)[number]["key"];
@@ -24,9 +24,9 @@ export function ProductShowcase({ products, categories }: { products: Product[];
   const byId = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
   const visible = useMemo(() => {
-    const ids = FILTERS.find((f) => f.key === filter)?.categoryIds;
-    return ids ? products.filter((p) => (ids as readonly string[]).includes(p.categoryId)) : products;
-  }, [filter, products]);
+    const slugs = FILTERS.find((f) => f.key === filter)?.slugs as readonly string[] | null | undefined;
+    return slugs ? products.filter((p) => slugs.includes(byId.get(p.categoryId)?.slug ?? "")) : products;
+  }, [filter, products, byId]);
 
   return (
     <section aria-labelledby="products-heading" className="relative bg-white pb-20 pt-4 sm:pb-28">

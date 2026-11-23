@@ -103,7 +103,7 @@ function CarouselButton({
   );
 }
 
-function CategoryCard({ category, index }: { category: CategoryWithCount; index: number }) {
+export function CategoryCard({ category, index }: { category: CategoryWithCount; index: number }) {
   const accent = ACCENT_STYLES[category.accent];
   return (
     <motion.div

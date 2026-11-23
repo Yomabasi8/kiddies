@@ -1,6 +1,7 @@
 "use client";
 
 import Form from "next/form";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
@@ -28,6 +29,20 @@ export function ShopFilters({ query, categories, ageFilters, materials, autoFocu
   const formRef = useRef<HTMLFormElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  /** Navigate with only the filled-in fields, keeping URLs tidy. */
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setOpen(false);
+    const params = new URLSearchParams();
+    for (const [k, v] of new FormData(e.currentTarget)) {
+      const val = String(v).trim();
+      if (val && !(k === "sort" && val === "featured")) params.set(k, val);
+    }
+    const qs = params.toString();
+    router.push(qs ? `/shop?${qs}` : "/shop", { scroll: false });
+  }
 
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
@@ -101,7 +116,7 @@ export function ShopFilters({ query, categories, ageFilters, materials, autoFocu
         action="/shop"
         scroll={false}
         onChange={handleChange}
-        onSubmit={() => setOpen(false)}
+        onSubmit={handleSubmit}
         aria-label="Product filters"
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-[86%] max-w-sm overflow-y-auto bg-white p-6 shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:w-auto lg:max-w-none lg:translate-x-0 lg:overflow-visible lg:p-0 lg:shadow-none",

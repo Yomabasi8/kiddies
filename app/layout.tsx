@@ -18,6 +18,8 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
+  // TODO: set NEXT_PUBLIC_SITE_URL to the production domain.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: {
     default: "Kiddies Accessories | Kids' Essentials & Toys in Nigeria",
     template: "%s | Kiddies Accessories",
