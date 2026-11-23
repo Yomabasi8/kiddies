@@ -4,8 +4,9 @@ import { getProductsByIds, effectivePrice } from "@/lib/catalog";
 import { NIGERIAN_STATES, deliveryMethodsFor } from "@/lib/delivery";
 import { getDeliveryMethodsFresh } from "@/lib/delivery-data";
 import { formatPrice } from "@/lib/format";
+import { checkCoupon, type CouponLine } from "@/lib/coupons";
 
-export type CheckoutField = "fullName" | "email" | "phone" | "address" | "state" | "city" | "instructions" | "deliveryMethod" | "cart";
+export type CheckoutField = "fullName" | "email" | "phone" | "address" | "state" | "city" | "instructions" | "deliveryMethod" | "coupon" | "cart";
 
 export type CheckoutValues = Partial<Record<Exclude<CheckoutField, "cart">, string>>;
 
@@ -19,7 +20,7 @@ export type CheckoutState =
       status: "payment_unavailable";
       message: string;
       values: CheckoutValues;
-      totals: { subtotal: number; delivery: number; total: number };
+      totals: { subtotal: number; discount: number; delivery: number; total: number };
     };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -51,6 +52,7 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
     city: text(fd, "city", 80),
     instructions: text(fd, "instructions", 300),
     deliveryMethod: text(fd, "deliveryMethod", 40),
+    coupon: text(fd, "coupon", 32).toUpperCase(),
   };
 
   const errors: Partial<Record<CheckoutField, string>> = {};
@@ -84,6 +86,7 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
   const messages: string[] = [];
   const corrections: CartCorrection[] = [];
   let subtotal = 0;
+  const couponLines: CouponLine[] = [];
 
   for (const line of lines) {
     const p = products.get(line.productId);
@@ -98,6 +101,7 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
     else if (quantity < line.quantity) messages.push(`Only ${p.stock} of ${p.name} left, so we updated the quantity.`);
     corrections.push({ productId: p.id, quantity, unitPrice, stock: p.stock });
     subtotal += unitPrice * quantity;
+    if (quantity > 0) couponLines.push({ productId: p.id, categoryId: p.categoryId, unitPrice, quantity });
   }
 
   const priceChanged = corrections.some((c) => {
@@ -108,13 +112,40 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
 
   if (messages.length > 0) return { status: "cart_changed", messages: [...new Set(messages)], corrections, values };
 
+  // Coupons are re-validated here against server prices, never trusted from the client.
+  let discount = 0;
+  if (values.coupon) {
+    const coupon = await checkCoupon(values.coupon, couponLines, values.email ?? null);
+    if (!coupon.ok) return { status: "invalid", errors: { coupon: coupon.message }, values };
+    discount = coupon.discount;
+  }
+
   const delivery = method!.fee;
-  const total = subtotal + delivery;
+  const total = subtotal - discount + delivery;
 
   return {
     status: "payment_unavailable",
     values,
-    totals: { subtotal, delivery, total },
+    totals: { subtotal, discount, delivery, total },
     message: `Your details and cart check out (total ${formatPrice(total)}), but online payment isn't switched on yet, so no order has been placed and you haven't been charged.`,
   };
+}
+
+export type CouponPreview =
+  | { ok: true; code: string; discount: number; description: string }
+  | { ok: false; message: string };
+
+/** Checkout "Apply" button: price the cart on the server and check the code. */
+export async function previewCoupon(code: string, cart: { productId: string; quantity: number }[], email: string): Promise<CouponPreview> {
+  const lines = (Array.isArray(cart) ? cart : []).filter((l) => typeof l?.productId === "string" && Number.isInteger(l?.quantity) && l.quantity > 0).slice(0, 100);
+  if (!lines.length) return { ok: false, message: "Your cart is empty." };
+  const products = await getProductsByIds(lines.map((l) => l.productId));
+  const couponLines: CouponLine[] = [];
+  for (const l of lines) {
+    const p = products.get(l.productId);
+    if (!p || p.stock <= 0) continue;
+    couponLines.push({ productId: p.id, categoryId: p.categoryId, unitPrice: effectivePrice(p), quantity: Math.min(l.quantity, p.stock) });
+  }
+  const r = await checkCoupon(String(code ?? "").slice(0, 32), couponLines, EMAIL.test(email) ? email.toLowerCase() : null);
+  return r.ok ? { ok: true, code: r.code, discount: r.discount, description: r.description } : r;
 }

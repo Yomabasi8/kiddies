@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { getStoreSettings } from "@/lib/store-settings";
 import { BallPit } from "./ball-pit";
 import { Mascot } from "./mascot";
 import { NewsletterForm } from "./newsletter-form";
@@ -34,10 +35,13 @@ const COLUMNS = [
   },
 ];
 
-// TODO: add business email, phone, address and social links once supplied.
+// Contact details and socials come from Admin → Store Settings.
 const COPYRIGHT_YEAR = 2026;
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const store = await getStoreSettings();
+  const socials = Object.entries(store.socials ?? {}).filter(([, url]) => url) as [string, string][];
+  const SOCIAL_LABEL: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", x: "X" };
   return (
     <footer className="relative overflow-hidden bg-sunny text-ink">
       <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-10">
@@ -95,6 +99,31 @@ export function SiteFooter() {
               Contact us
               <ArrowUpRight className="size-4" />
             </Link>
+            {(store.email || store.phone || store.whatsapp || store.address) && (
+              <ul className="mt-5 space-y-2 text-[15px] font-semibold text-ink/80">
+                {store.email && <li><a href={`mailto:${store.email}`} className="inline-flex items-center gap-2 hover:text-ink"><Mail className="size-4" /> {store.email}</a></li>}
+                {store.phone && <li><a href={`tel:${store.phone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 hover:text-ink"><Phone className="size-4" /> {store.phone}</a></li>}
+                {store.whatsapp && (
+                  <li>
+                    <a href={`https://wa.me/${store.whatsapp.replace(/\D/g, "").replace(/^0/, "234")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-ink">
+                      <MessageCircle className="size-4" /> WhatsApp
+                    </a>
+                  </li>
+                )}
+                {store.address && <li className="flex items-start gap-2"><MapPin className="mt-0.5 size-4 shrink-0" /> {store.address}</li>}
+              </ul>
+            )}
+            {socials.length > 0 && (
+              <ul className="mt-4 flex flex-wrap gap-2" aria-label="Social media">
+                {socials.map(([k, url]) => (
+                  <li key={k}>
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center rounded-full border-2 border-ink px-3.5 text-sm font-bold hover:bg-ink hover:text-white">
+                      {SOCIAL_LABEL[k] ?? k}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </nav>
 

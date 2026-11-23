@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useActionState, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertCircle, CreditCard, Info, Lock, ShoppingBag, UserRound } from "lucide-react";
-import { submitCheckout, type CheckoutField, type CheckoutState } from "@/lib/checkout/actions";
+import { AlertCircle, CreditCard, Info, Lock, ShoppingBag, Tag, UserRound, X } from "lucide-react";
+import { previewCoupon, submitCheckout, type CheckoutField, type CheckoutState, type CouponPreview } from "@/lib/checkout/actions";
 import { selectSubtotal, useCart } from "@/lib/cart-store";
 import { NIGERIAN_STATES, deliveryMethodsFor, type DeliveryMethod } from "@/lib/delivery";
 import { formatPrice } from "@/lib/format";
@@ -23,6 +23,22 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
   const syncFromServer = useCart((s) => s.syncFromServer);
   const [state, action, pending] = useActionState(submitCheckout, initial);
   const [mode, setMode] = useState<"guest" | "signin">("guest");
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<Extract<CouponPreview, { ok: true }> | null>(null);
+  const [couponMsg, setCouponMsg] = useState("");
+  const [applying, setApplying] = useState(false);
+
+  async function applyCoupon() {
+    if (!couponInput.trim()) return;
+    setApplying(true);
+    setCouponMsg("");
+    const r = await previewCoupon(couponInput, items.map((i) => ({ productId: i.productId, quantity: i.quantity })), "");
+    setApplying(false);
+    if (r.ok) {
+      setCoupon(r);
+      setCouponInput("");
+    } else setCouponMsg(r.message);
+  }
 
   const values = state.status === "idle" ? {} : state.values;
   const errors: Partial<Record<CheckoutField, string>> = state.status === "invalid" ? state.errors : {};
@@ -103,6 +119,7 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
               className="mt-8 space-y-10"
             >
               <input type="hidden" name="cart" value={JSON.stringify(items.map((i) => ({ productId: i.productId, quantity: i.quantity })))} />
+              <input type="hidden" name="coupon" value={coupon?.code ?? ""} />
               {items.map((i) => (
                 <input key={i.productId} type="hidden" name={`price:${i.productId}`} value={i.unitPrice} />
               ))}
@@ -187,7 +204,7 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
                 className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-coral text-base font-bold text-white shadow-pop disabled:opacity-70"
               >
                 <Lock className="size-4" />
-                {pending ? "Checking your order…" : `Continue to payment${method ? ` · ${formatPrice(subtotal + method.fee)}` : ""}`}
+                {pending ? "Checking your order…" : `Continue to payment${method ? ` · ${formatPrice(subtotal - (coupon?.discount ?? 0) + method.fee)}` : ""}`}
               </motion.button>
             </motion.form>
           )}
@@ -212,7 +229,42 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
             </li>
           ))}
         </ul>
-        <OrderSummaryTotals subtotal={subtotal} delivery={method ? method.fee : null} className="mt-6 border-t-2 border-ink/10 pt-5" />
+        {/* Coupon */}
+        <div className="mt-6 border-t-2 border-ink/10 pt-5">
+          {coupon ? (
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-brand-light px-4 py-3">
+              <span className="flex items-center gap-2 text-sm">
+                <Tag className="size-4 text-brand" />
+                <span><span className="font-mono font-bold">{coupon.code}</span> <span className="text-ink/60">· {coupon.description}</span></span>
+              </span>
+              <button type="button" onClick={() => setCoupon(null)} aria-label="Remove coupon" className="grid size-7 place-items-center rounded-full hover:bg-white">
+                <X className="size-4" />
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="coupon-code" className="text-sm font-bold">Coupon code</label>
+              <div className="mt-1.5 flex gap-2">
+                <input
+                  id="coupon-code"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase().replace(/\s/g, ""))}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), applyCoupon())}
+                  aria-invalid={!!(couponMsg || errors.coupon) || undefined}
+                  aria-describedby="coupon-msg"
+                  className="h-11 min-w-0 flex-1 rounded-xl border-2 border-ink/10 px-3 font-mono text-sm uppercase outline-none focus:border-brand"
+                />
+                <button type="button" onClick={applyCoupon} disabled={applying || !couponInput.trim()} className="h-11 rounded-xl bg-ink px-4 text-sm font-bold text-white disabled:opacity-40">
+                  {applying ? "…" : "Apply"}
+                </button>
+              </div>
+              {(couponMsg || errors.coupon) && (
+                <p id="coupon-msg" role="alert" className="mt-1.5 text-sm font-semibold text-coral">{couponMsg || errors.coupon}</p>
+              )}
+            </div>
+          )}
+        </div>
+        <OrderSummaryTotals subtotal={subtotal} discount={coupon?.discount ?? 0} delivery={method ? method.fee : null} className="mt-5" />
       </aside>
     </div>
   );
