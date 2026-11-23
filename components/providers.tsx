@@ -16,6 +16,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     useCart.persist.rehydrate();
+
+    // Supabase falls back to the site root when an email link's redirect
+    // isn't allow-listed; forward invite/reset tokens to the right page.
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const type = hash.get("type");
+    if (
+      hash.get("access_token") &&
+      (type === "invite" || type === "recovery") &&
+      window.location.pathname !== "/admin/set-password"
+    ) {
+      window.location.replace(`/admin/set-password${window.location.hash}`);
+    }
   }, []);
 
   return (
