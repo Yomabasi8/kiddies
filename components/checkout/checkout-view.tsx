@@ -192,7 +192,7 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
                   <p className="flex items-center gap-2 font-bold text-ink">
                     <CreditCard className="size-4" /> Pay securely online
                   </p>
-                  <p className="mt-1">You&apos;ll be taken to our payment provider to pay. We never see or store your card details.</p>
+                  <p className="mt-1">You&apos;ll be taken to Paystack to pay by card, bank transfer or USSD, then brought back here. We never see or store your card details.</p>
                 </div>
               </Section>
 
@@ -204,7 +204,7 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
                 className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-coral text-base font-bold text-white shadow-pop disabled:opacity-70"
               >
                 <Lock className="size-4" />
-                {pending ? "Checking your order…" : `Continue to payment${method ? ` · ${formatPrice(subtotal - (coupon?.discount ?? 0) + method.fee)}` : ""}`}
+                {pending ? "Taking you to secure payment…" : `Continue to payment${method ? ` · ${formatPrice(subtotal - (coupon?.discount ?? 0) + method.fee)}` : ""}`}
               </motion.button>
             </motion.form>
           )}
@@ -282,7 +282,7 @@ function Status({ state }: { state: CheckoutState }) {
       <div className="space-y-1">
         {state.status === "invalid" && <p>{state.errors.cart ?? "Please check the highlighted fields."}</p>}
         {state.status === "cart_changed" && state.messages.map((m) => <p key={m}>{m}</p>)}
-        {state.status === "payment_unavailable" && <p>{state.message}</p>}
+        {(state.status === "payment_unavailable" || state.status === "payment_error") && <p>{state.message}</p>}
       </div>
     </div>
   );

@@ -229,7 +229,7 @@ export async function getRelatedProducts(product: Product, limit = 4): Promise<P
  * Current products by id for checkout. UNCACHED on purpose: prices and stock
  * must be live when validating an order.
  */
-export async function getProductsByIds(ids: string[]): Promise<Map<string, Product>> {
+export async function getProductsByIds(ids: string[]): Promise<Map<string, ProductDetail>> {
   const uuids = ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id));
   if (uuids.length === 0) return new Map();
   const { data, error } = await createPublicClient()
@@ -238,7 +238,7 @@ export async function getProductsByIds(ids: string[]): Promise<Map<string, Produ
     .eq("status", "active")
     .in("id", uuids);
   if (error) throw new Error(`Loading products failed: ${error.message}`);
-  return new Map((data as unknown as ProductRow[]).map((r) => [r.id, toSummary(toProduct(r))]));
+  return new Map((data as unknown as ProductRow[]).map((r) => [r.id, toProduct(r)]));
 }
 
 export async function searchProducts(query: ShopQuery): Promise<ShopResult> {

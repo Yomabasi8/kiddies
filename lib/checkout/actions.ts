@@ -1,5 +1,10 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { initializeTransaction, paystackConfigured } from "@/lib/payments/paystack";
+
 import { getProductsByIds, effectivePrice } from "@/lib/catalog";
 import { NIGERIAN_STATES, deliveryMethodsFor } from "@/lib/delivery";
 import { getDeliveryMethodsFresh } from "@/lib/delivery-data";
@@ -16,6 +21,7 @@ export type CheckoutState =
   | { status: "idle" }
   | { status: "invalid"; errors: Partial<Record<CheckoutField, string>>; values: CheckoutValues }
   | { status: "cart_changed"; messages: string[]; corrections: CartCorrection[]; values: CheckoutValues }
+  | { status: "payment_error"; message: string; values: CheckoutValues }
   | {
       status: "payment_unavailable";
       message: string;
@@ -87,6 +93,7 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
   const corrections: CartCorrection[] = [];
   let subtotal = 0;
   const couponLines: CouponLine[] = [];
+  const orderItems: { product_id: string; product_name: string; sku: string; image_url: string | null; unit_price: number; quantity: number }[] = [];
 
   for (const line of lines) {
     const p = products.get(line.productId);
@@ -101,7 +108,10 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
     else if (quantity < line.quantity) messages.push(`Only ${p.stock} of ${p.name} left, so we updated the quantity.`);
     corrections.push({ productId: p.id, quantity, unitPrice, stock: p.stock });
     subtotal += unitPrice * quantity;
-    if (quantity > 0) couponLines.push({ productId: p.id, categoryId: p.categoryId, unitPrice, quantity });
+    if (quantity > 0) {
+      couponLines.push({ productId: p.id, categoryId: p.categoryId, unitPrice, quantity });
+      orderItems.push({ product_id: p.id, product_name: p.name, sku: p.sku, image_url: p.image, unit_price: unitPrice, quantity });
+    }
   }
 
   const priceChanged = corrections.some((c) => {
@@ -114,22 +124,83 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
 
   // Coupons are re-validated here against server prices, never trusted from the client.
   let discount = 0;
+  let couponId: string | null = null;
   if (values.coupon) {
     const coupon = await checkCoupon(values.coupon, couponLines, values.email ?? null);
     if (!coupon.ok) return { status: "invalid", errors: { coupon: coupon.message }, values };
     discount = coupon.discount;
+    couponId = coupon.couponId;
   }
 
   const delivery = method!.fee;
   const total = subtotal - discount + delivery;
 
-  return {
-    status: "payment_unavailable",
-    values,
-    totals: { subtotal, discount, delivery, total },
-    message: `Your details and cart check out (total ${formatPrice(total)}), but online payment isn't switched on yet, so no order has been placed and you haven't been charged.`,
-  };
+  if (!paystackConfigured()) {
+    return {
+      status: "payment_unavailable",
+      values,
+      totals: { subtotal, discount, delivery, total },
+      message: `Your details and cart check out (total ${formatPrice(total)}), but online payment isn't switched on yet, so no order has been placed and you haven't been charged.`,
+    };
+  }
+
+  // 1. Record the pending order (items, prices, payment) in one transaction.
+  const db = createAdminClient();
+  const paymentReference = `KAP-${randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase()}`;
+  const { data: created, error: createError } = await db
+    .rpc("create_checkout_order", {
+      p_order: {
+        email: values.email,
+        full_name: values.fullName,
+        phone: values.phone!.replace(/[\s-]/g, ""),
+        address_line: values.address,
+        city: values.city,
+        state: values.state,
+        instructions: values.instructions,
+        delivery_method_id: method!.id,
+        delivery_method_label: method!.label,
+        subtotal,
+        discount_total: discount,
+        delivery_fee: delivery,
+        total,
+        coupon_id: couponId,
+        coupon_code: couponId ? values.coupon : null,
+      },
+      p_items: orderItems,
+      p_payment_reference: paymentReference,
+    })
+    .single<{ order_id: string; order_reference: string }>();
+  if (createError || !created) {
+    console.error("[checkout] creating order failed", createError?.message);
+    return { status: "payment_error", values, message: "We couldn't place your order just now. You haven't been charged. Please try again." };
+  }
+
+  // 2. Start the Paystack payment and send the customer to its secure page.
+  const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  let paymentUrl: string;
+  try {
+    const tx = await initializeTransaction({
+      email: values.email!,
+      amount: total,
+      reference: paymentReference,
+      callbackUrl: `${site}/api/checkout/callback`,
+      metadata: {
+        order_id: created.order_id,
+        order_reference: created.order_reference,
+        cancel_action: `${site}/checkout`,
+      },
+    });
+    paymentUrl = tx.authorization_url;
+  } catch (err) {
+    console.error("[checkout] starting payment failed", err);
+    await db.rpc("mark_payment_unsuccessful", { p_reference: paymentReference, p_status: "failed", p_raw: null });
+    await db.rpc("admin_set_order_status", { p_order_id: created.order_id, p_to: "cancelled", p_note: "Payment could not be started", p_actor: null });
+    return { status: "payment_error", values, message: "We couldn't connect to our payment provider. You haven't been charged. Please try again in a moment." };
+  }
+
+  redirect(paymentUrl);
 }
+
 
 export type CouponPreview =
   | { ok: true; code: string; discount: number; description: string }
