@@ -12,10 +12,11 @@ import {
   useTransform,
   type MotionValue,
 } from "motion/react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Truck } from "lucide-react";
 import { CloudEdge, LightbulbDoodle, PaperPlaneDoodle, SparksDoodle, SwirlArrowDoodle } from "./hero-doodles";
 import { HeroBubbles } from "./hero-bubbles";
 import { Mascot } from "./mascot";
+import { useFreeDeliveryOffer } from "./offer-context";
 
 const HEADLINE = [["Making", "Childhood"], ["a", "Little", "More", "Wonderful."]];
 const MotionLink = motion.create(Link);
@@ -30,6 +31,7 @@ function useParallax(mx: MotionValue<number>, my: MotionValue<number>, scroll: M
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
+  const offer = useFreeDeliveryOffer();
 
   const rawX = useMotionValue(0);
   const rawY = useMotionValue(0);
@@ -80,15 +82,15 @@ export function Hero() {
         {/* Honest "what's new" pill (no ratings until there are real reviews) */}
         <motion.div initial={{ y: -16, opacity: 0, scale: 0.9 }} animate={{ y: 0, opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 16, delay: 0.2 }}>
           <Link
-            href="/shop?sort=newest"
+            href={offer.active ? "/shop" : "/shop?sort=newest"}
             className="group inline-flex items-center gap-2 rounded-full bg-white/10 py-1.5 pl-1.5 pr-4 text-sm font-semibold text-white ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-white/20"
           >
             <span className="grid size-7 place-items-center rounded-full bg-sunny text-ink">
               <motion.span animate={{ rotate: [0, 20, -10, 0], scale: [1, 1.2, 1] }} transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 1.4 }}>
-                <Sparkles className="size-4" />
+                {offer.active ? <Truck className="size-4" /> : <Sparkles className="size-4" />}
               </motion.span>
             </span>
-            New arrivals are in
+            {offer.active ? `Free delivery on every order until ${offer.ends}` : "New arrivals are in"}
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </motion.div>

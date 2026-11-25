@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CheckCircle2, CircleAlert } from "lucide-react";
 import { Card, PageTitle } from "@/components/admin/ui";
-import { AccountPanel, BusinessForm, DeliveryMethodsEditor, NotificationsForm } from "@/components/admin/settings-forms";
+import { AccountPanel, BusinessForm, DeliveryMethodsEditor, NotificationsForm, OfferPickupForm } from "@/components/admin/settings-forms";
 import { requireStaff } from "@/lib/auth/dal";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -38,6 +38,17 @@ export default async function SettingsPage() {
             <BusinessForm
               canEdit={isAdmin}
               initial={{ store_name: s?.store_name ?? "", email: s?.email ?? "", phone: s?.phone ?? "", whatsapp: s?.whatsapp ?? "", address: s?.address ?? "", instagram: socials.instagram ?? "", facebook: socials.facebook ?? "", tiktok: socials.tiktok ?? "", x: socials.x ?? "" }}
+            />
+          </Card>
+          <Card title="Launch offer & pickup">
+            <OfferPickupForm
+              canEdit={isAdmin}
+              initial={{
+                // Show the end date as a Nigeria-time calendar day.
+                freeUntil: s?.free_delivery_until ? new Date(new Date(s.free_delivery_until).getTime() + 3_600_000).toISOString().slice(0, 10) : "",
+                pickupAddress: s?.pickup_address ?? "",
+                pickupHours: s?.pickup_hours ?? "",
+              }}
             />
           </Card>
           <Card title="Delivery">

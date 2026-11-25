@@ -6,6 +6,7 @@ import {
   saveBusinessInfo,
   saveDeliveryMethod,
   saveNotifications,
+  saveOfferAndPickup,
   signOutEverywhere,
   type DeliveryInput,
   type SettingsResult,
@@ -205,5 +206,31 @@ export function AccountPanel({ email }: { email: string }) {
         </form>
       </div>
     </div>
+  );
+}
+
+export function OfferPickupForm({ initial, canEdit }: { initial: { freeUntil: string; pickupAddress: string; pickupHours: string }; canEdit: boolean }) {
+  const [v, setV] = useState(initial);
+  const [r, setR] = useState<SettingsResult | null>(null);
+  const [pending, start] = useTransition();
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); start(async () => setR(await saveOfferAndPickup(v))); }} className="space-y-4">
+      <L label="Free delivery until" hint="Every order ships free until the end of this day (Nigeria time). Clear it to end the offer.">
+        <input type="date" className={field} value={v.freeUntil} disabled={!canEdit} onChange={(e) => setV({ ...v, freeUntil: e.target.value })} />
+      </L>
+      {canEdit && v.freeUntil && (
+        <button type="button" onClick={() => setV({ ...v, freeUntil: "" })} className="text-xs font-bold text-red-600 hover:underline">End the offer</button>
+      )}
+      <div className="border-t border-ink/10 pt-4">
+        <L label="Pickup address" hint="Customers can choose free pickup once this is filled in.">
+          <textarea className={cn(field, "h-20 py-2")} value={v.pickupAddress} disabled={!canEdit} onChange={(e) => setV({ ...v, pickupAddress: e.target.value })} placeholder="e.g. 12 Admiralty Way, Lekki Phase 1, Lagos" />
+        </L>
+      </div>
+      <L label="Pickup hours" hint="Optional">
+        <input className={field} value={v.pickupHours} disabled={!canEdit} onChange={(e) => setV({ ...v, pickupHours: e.target.value })} placeholder="e.g. Mon–Sat, 10am–6pm" />
+      </L>
+      <Result r={r} />
+      {canEdit && <button type="submit" disabled={pending} className={btn.primary}>{pending ? "Saving…" : "Save offer & pickup"}</button>}
+    </form>
   );
 }

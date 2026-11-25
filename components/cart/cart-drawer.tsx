@@ -9,6 +9,7 @@ import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { selectCount, selectSubtotal, useCart, type CartItem } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
 import { useCartHydrated } from "./cart-button";
+import { useFreeDeliveryOffer } from "@/components/storefront/offer-context";
 
 export function CartDrawer() {
   const isOpen = useCart((s) => s.isOpen);
@@ -18,6 +19,7 @@ export function CartDrawer() {
   const subtotal = useCart(selectSubtotal);
   const hydrated = useCartHydrated();
   const lenis = useLenis();
+  const offer = useFreeDeliveryOffer();
   const closeRef = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
 
@@ -98,7 +100,11 @@ export function CartDrawer() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <dt className="text-ink/55">Delivery</dt>
-                      <dd className="text-ink/55">Calculated at checkout</dd>
+                      {offer.active ? (
+                        <dd className="font-bold text-brand">Free until {offer.ends}</dd>
+                      ) : (
+                        <dd className="text-ink/55">Calculated at checkout</dd>
+                      )}
                     </div>
                   </dl>
                   <motion.div whileHover={{ y: -2 }} whileTap={{ y: 4 }} className="mt-5">

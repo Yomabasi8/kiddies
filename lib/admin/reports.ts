@@ -86,3 +86,32 @@ export async function getReport(range: RangeKey, granularity: Granularity) {
     customers: { total: customers, returning, new: customers - returning, repeatRate: customers ? returning / customers : 0 },
   };
 }
+
+export type SearchTerm = { query: string; searches: number; lastResults: number };
+
+/** Most-searched terms, and searches that found nothing, for a date range. */
+export async function getSearchInsights(range: RangeKey) {
+  const days = RANGES.find((r) => r.key === range)?.days ?? 30;
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  const { data, error } = await createAdminClient()
+    .from("search_queries")
+    .select("query, results_count, created_at")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(10000);
+  if (error) throw new Error(error.message);
+
+  const terms = new Map<string, SearchTerm>();
+  for (const row of data ?? []) {
+    const t = terms.get(row.query);
+    // Rows are newest first, so the first one seen holds the latest result count.
+    if (t) t.searches += 1;
+    else terms.set(row.query, { query: row.query, searches: 1, lastResults: row.results_count });
+  }
+  const all = [...terms.values()].sort((a, b) => b.searches - a.searches);
+  return {
+    total: data?.length ?? 0,
+    top: all.slice(0, 10),
+    noResults: all.filter((t) => t.lastResults === 0).slice(0, 10),
+  };
+}

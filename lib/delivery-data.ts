@@ -5,16 +5,33 @@ import type { DeliveryMethod } from "./delivery";
 
 export const DELIVERY_TAG = "delivery";
 
-type Row = { id: string; label: string; description: string; fee: number; states: string[] | null };
+type Row = { id: string; label: string; description: string; fee: number; states: string[] | null; is_pickup: boolean };
 
+/**
+ * Active delivery methods. Pickup is only offered once the store has a
+ * pickup address. Fees here are the normal fees: the launch free-delivery
+ * offer is applied with chargeFor() at the moment of use.
+ */
 async function load(): Promise<DeliveryMethod[]> {
-  const { data, error } = await createPublicClient()
-    .from("delivery_methods")
-    .select("id, label, description, fee, states")
-    .eq("is_active", true)
-    .order("sort_order");
-  if (error) throw new Error(`Loading delivery methods failed: ${error.message}`);
-  return (data as Row[]).map((r) => ({ ...r, states: r.states }));
+  const db = createPublicClient();
+  const [methods, settings] = await Promise.all([
+    db.from("delivery_methods").select("id, label, description, fee, states, is_pickup").eq("is_active", true).order("sort_order"),
+    db.from("store_settings").select("pickup_address, pickup_hours").eq("id", 1).maybeSingle(),
+  ]);
+  if (methods.error) throw new Error(`Loading delivery methods failed: ${methods.error.message}`);
+  const pickupAddress = settings.data?.pickup_address?.trim() || null;
+  return (methods.data as Row[])
+    .filter((r) => !r.is_pickup || pickupAddress)
+    .map((r) => ({
+      id: r.id,
+      label: r.label,
+      description: r.description,
+      fee: r.fee,
+      states: r.states,
+      isPickup: r.is_pickup,
+      pickupAddress: r.is_pickup ? pickupAddress : null,
+      pickupHours: r.is_pickup ? settings.data?.pickup_hours?.trim() || null : null,
+    }));
 }
 
 /** Cached, for display (checkout options, shipping policy). */
@@ -28,4 +45,10 @@ export async function getDeliveryMethods(): Promise<DeliveryMethod[]> {
 /** Uncached, for pricing an order on the server. */
 export async function getDeliveryMethodsFresh(): Promise<DeliveryMethod[]> {
   return load();
+}
+
+/** Uncached launch-offer end date, for pricing an order on the server. */
+export async function getFreeDeliveryUntilFresh(): Promise<string | null> {
+  const { data } = await createPublicClient().from("store_settings").select("free_delivery_until").eq("id", 1).maybeSingle();
+  return data?.free_delivery_until ?? null;
 }

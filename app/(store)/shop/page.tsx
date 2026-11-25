@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/storefront/page-header";
 import { EmptyState } from "@/components/storefront/empty-state";
 import { ShopFilters } from "@/components/shop/shop-filters";
 import { SortSelect } from "@/components/shop/sort-select";
+import { SearchLogger } from "@/components/shop/search-logger";
 import { ProductGrid, ProductGridSkeleton } from "@/components/shop/product-grid";
 import { AGE_FILTERS, MATERIAL_FILTERS, getCategories, searchProducts } from "@/lib/catalog";
 import { parseShopParams, shopHref, type RawParams } from "@/lib/catalog/shop-params";
@@ -64,6 +65,7 @@ async function ShopResults({ searchParams }: { searchParams: Promise<RawParams> 
             autoFocusSearch={raw.focus === "search"}
             activeCount={chips.filter((c) => !c.label.startsWith("“")).length}
           >
+        {query.q && result.page === 1 && <SearchLogger key={query.q} query={query.q} />}
         <section aria-labelledby="results-heading">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="results-heading" className="text-[15px] font-bold text-ink">

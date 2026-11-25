@@ -23,7 +23,25 @@ export type DeliveryMethod = {
   fee: number;
   /** States this method serves; null means everywhere. */
   states: readonly string[] | null;
+  isPickup?: boolean;
+  /** For pickup: where and when to collect. */
+  pickupAddress?: string | null;
+  pickupHours?: string | null;
 };
+
+/** True while the launch free-delivery offer is running. */
+export function freeDeliveryActive(until: string | null | undefined, now = Date.now()) {
+  return !!until && new Date(until).getTime() > now;
+}
+
+/** What the customer actually pays for this method right now. */
+export function chargeFor(method: DeliveryMethod, freeUntil: string | null | undefined, now = Date.now()) {
+  return method.isPickup || freeDeliveryActive(freeUntil, now) ? 0 : method.fee;
+}
+
+export function formatOfferEnd(until: string) {
+  return new Date(until).toLocaleDateString("en-NG", { day: "numeric", month: "long", timeZone: "Africa/Lagos" });
+}
 
 /** Seed data only. Do not read at runtime. */
 export const DELIVERY_METHODS: DeliveryMethod[] = [
@@ -43,7 +61,7 @@ export const DELIVERY_METHODS: DeliveryMethod[] = [
   },
 ];
 
-/** Methods that serve the given state. */
+/** Methods that serve the given state (pickup is available everywhere). */
 export function deliveryMethodsFor(methods: DeliveryMethod[], state: string | null | undefined) {
   if (!state) return [];
   return methods.filter((m) => m.states === null || m.states.includes(state));

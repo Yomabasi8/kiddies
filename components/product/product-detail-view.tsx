@@ -9,6 +9,7 @@ import { discountPercent, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import { ProductVisual } from "@/components/storefront/product-visual";
+import { useFreeDeliveryOffer } from "@/components/storefront/offer-context";
 
 const LOW_STOCK = 5;
 
@@ -19,6 +20,7 @@ export function ProductDetailView({ product, category }: { product: ProductDetai
   ];
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
+  const offer = useFreeDeliveryOffer();
   const visualRef = useRef<HTMLDivElement>(null);
 
   const onSale = product.salePrice !== null && product.salePrice < product.price;
@@ -178,7 +180,7 @@ export function ProductDetailView({ product, category }: { product: ProductDetai
             <ShieldCheck className="size-5 text-brand" /> Secure checkout
           </li>
           <li className="flex items-center gap-2">
-            <Package className="size-5 text-brand" /> Delivery fee shown at checkout
+            <Package className="size-5 text-brand" /> {offer.active ? `Free delivery until ${offer.ends}` : "Delivery fee shown at checkout"}
           </li>
           <li className="flex items-center gap-2">
             <Sparkles className="size-5 text-brand" /> No account needed

@@ -89,3 +89,24 @@ export async function signOutEverywhere() {
   await supabase.auth.signOut({ scope: "global" });
   redirect("/admin/login");
 }
+
+/** Launch offer end date (Nigeria time) and pickup point details. */
+export async function saveOfferAndPickup(input: { freeUntil: string; pickupAddress: string; pickupHours: string }): Promise<SettingsResult> {
+  const actor = await requireAdmin();
+  const date = input.freeUntil.trim();
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { ok: false, message: "Choose a valid end date." };
+  const pickupAddress = clean(input.pickupAddress, 300);
+  const row = {
+    // End of the chosen day in Nigeria time.
+    free_delivery_until: date ? new Date(`${date}T23:59:59+01:00`).toISOString() : null,
+    pickup_address: pickupAddress || null,
+    pickup_hours: clean(input.pickupHours, 120) || null,
+  };
+  const { error } = await createAdminClient().from("store_settings").update(row).eq("id", 1);
+  if (error) return { ok: false, message: "Couldn't save these settings." };
+  await audit(actor, "settings.offer_pickup", "store_settings", "1", { free_delivery_until: row.free_delivery_until, pickup: !!row.pickup_address });
+  updateTag(SETTINGS_TAG);
+  updateTag(DELIVERY_TAG);
+  revalidatePath("/admin/settings");
+  return { ok: true, message: pickupAddress ? "Saved. Pickup is now offered at checkout." : "Saved. Pickup stays hidden until you add an address." };
+}

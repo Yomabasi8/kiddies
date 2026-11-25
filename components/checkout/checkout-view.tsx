@@ -4,19 +4,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useActionState, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertCircle, CreditCard, Info, Lock, ShoppingBag, Tag, UserRound, X } from "lucide-react";
+import { AlertCircle, CreditCard, Info, Lock, MapPin, ShoppingBag, Tag, Truck, UserRound, X } from "lucide-react";
 import { previewCoupon, submitCheckout, type CheckoutField, type CheckoutState, type CouponPreview } from "@/lib/checkout/actions";
 import { selectSubtotal, useCart } from "@/lib/cart-store";
-import { NIGERIAN_STATES, deliveryMethodsFor, type DeliveryMethod } from "@/lib/delivery";
+import { NIGERIAN_STATES, chargeFor, deliveryMethodsFor, formatOfferEnd, freeDeliveryActive, type DeliveryMethod } from "@/lib/delivery";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCartHydrated } from "@/components/cart/cart-button";
 import { OrderSummaryTotals } from "@/components/cart/order-summary";
 import { EmptyState } from "@/components/storefront/empty-state";
+import { useNow } from "@/components/storefront/offer-context";
 
 const initial: CheckoutState = { status: "idle" };
 
-export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMethod[] }) {
+export function CheckoutView({ deliveryMethods, freeDeliveryUntil }: { deliveryMethods: DeliveryMethod[]; freeDeliveryUntil: string | null }) {
+  // Browser clock for display; the server applies the same rule when pricing the order.
+  // While pre-rendering (no clock yet) 0 means "show the offer if one is set".
+  const now = useNow() ?? 0;
+  const offer = freeDeliveryActive(freeDeliveryUntil, now);
   const hydrated = useCartHydrated();
   const items = useCart((s) => s.items);
   const subtotal = useCart(selectSubtotal);
@@ -47,6 +52,8 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
   const methods = deliveryMethodsFor(deliveryMethods, region);
   // Default to the first option for the chosen state.
   const method = methods.find((m) => m.id === methodId) ?? methods[0];
+  const pickup = !!method?.isPickup;
+  const deliveryFee = method ? chargeFor(method, freeDeliveryUntil, now) : null;
 
   // Apply the server's cart corrections (stock / price changes).
   useEffect(() => {
@@ -133,7 +140,9 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
               </Section>
 
               <Section step={2} title="Delivery details">
-                <Field label="Delivery address" name="address" autoComplete="street-address" defaultValue={values.address} error={errors.address} className="sm:col-span-2" />
+                {!pickup && (
+                  <Field label="Delivery address" name="address" autoComplete="street-address" defaultValue={values.address?.startsWith("Store pickup") ? "" : values.address} error={errors.address} className="sm:col-span-2" />
+                )}
                 <div>
                   <label htmlFor="state" className="mb-1.5 block text-sm font-bold">State</label>
                   <select
@@ -155,18 +164,25 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
                   </select>
                   <FieldError id="state-error" message={errors.state} />
                 </div>
-                <Field label="City / LGA" name="city" autoComplete="address-level2" defaultValue={values.city} error={errors.city} />
+                {!pickup && <Field label="City / LGA" name="city" autoComplete="address-level2" defaultValue={values.city === "Pickup" ? "" : values.city} error={errors.city} />}
+                {!pickup && (
                 <div className="sm:col-span-2">
                   <label htmlFor="instructions" className="mb-1.5 block text-sm font-bold">
                     Delivery instructions <span className="font-semibold text-ink/40">(optional)</span>
                   </label>
                   <textarea id="instructions" name="instructions" rows={3} maxLength={300} defaultValue={values.instructions} placeholder="Landmarks, gate codes, best time to deliver…" className={cn(inputCls(false), "h-auto py-3")} />
                 </div>
+                )}
               </Section>
 
               <Section step={3} title="Delivery method">
                 <fieldset className="sm:col-span-2" aria-describedby={errors.deliveryMethod ? "method-error" : undefined}>
                   <legend className="sr-only">Delivery method</legend>
+                  {offer && freeDeliveryUntil && (
+                    <p className="mb-3 flex items-center gap-2 rounded-2xl bg-sunny/40 px-4 py-3 text-sm font-bold text-ink">
+                      <Truck className="size-4 shrink-0" /> Launch offer: free delivery on every order until {formatOfferEnd(freeDeliveryUntil)}.
+                    </p>
+                  )}
                   {!region ? (
                     <p className="rounded-2xl bg-[#F5F6F8] px-5 py-4 text-sm font-semibold text-ink/55">Choose your state to see delivery options.</p>
                   ) : (
@@ -178,9 +194,29 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
                             <span className="block font-bold">{m.label}</span>
                             <span className="text-sm text-ink/55">{m.description}</span>
                           </span>
-                          <span className="font-extrabold">{formatPrice(m.fee)}</span>
+                          <span className="text-right">
+                            {chargeFor(m, freeDeliveryUntil, now) === 0 ? (
+                              <>
+                                <span className="block font-extrabold text-brand">Free</span>
+                                {m.fee > 0 && <span className="text-xs text-ink/40 line-through">{formatPrice(m.fee)}</span>}
+                              </>
+                            ) : (
+                              <span className="font-extrabold">{formatPrice(m.fee)}</span>
+                            )}
+                          </span>
                         </label>
                       ))}
+                    </div>
+                  )}
+                  {pickup && method?.pickupAddress && (
+                    <div className="mt-3 flex gap-3 rounded-2xl bg-[#FDF8E9] px-5 py-4 text-sm">
+                      <MapPin className="mt-0.5 size-5 shrink-0 text-coral" />
+                      <span>
+                        <span className="block font-bold">Collect from</span>
+                        <span className="block text-ink/75">{method.pickupAddress}</span>
+                        {method.pickupHours && <span className="mt-1 block text-ink/55">{method.pickupHours}</span>}
+                        <span className="mt-1 block text-ink/55">We&apos;ll call or message you when your order is ready.</span>
+                      </span>
                     </div>
                   )}
                   <FieldError id="method-error" message={errors.deliveryMethod} />
@@ -204,7 +240,7 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
                 className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-coral text-base font-bold text-white shadow-pop disabled:opacity-70"
               >
                 <Lock className="size-4" />
-                {pending ? "Taking you to secure payment…" : `Continue to payment${method ? ` · ${formatPrice(subtotal - (coupon?.discount ?? 0) + method.fee)}` : ""}`}
+                {pending ? "Taking you to secure payment…" : `Continue to payment${method ? ` · ${formatPrice(subtotal - (coupon?.discount ?? 0) + (deliveryFee ?? 0))}` : ""}`}
               </motion.button>
             </motion.form>
           )}
@@ -264,7 +300,7 @@ export function CheckoutView({ deliveryMethods }: { deliveryMethods: DeliveryMet
             </div>
           )}
         </div>
-        <OrderSummaryTotals subtotal={subtotal} discount={coupon?.discount ?? 0} delivery={method ? method.fee : null} className="mt-5" />
+        <OrderSummaryTotals subtotal={subtotal} discount={coupon?.discount ?? 0} delivery={deliveryFee} className="mt-5" />
       </aside>
     </div>
   );

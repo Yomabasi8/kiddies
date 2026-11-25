@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BarChart3, Boxes, Package, Receipt, ShoppingCart, Users, Wallet } from "lucide-react";
+import { BarChart3, Boxes, Package, Receipt, Search, SearchX, ShoppingCart, Users, Wallet } from "lucide-react";
 import { AdminEmpty, Card, PageTitle, StatCard } from "@/components/admin/ui";
 import { tableHead, td, th } from "@/components/admin/list-controls";
 import { SalesChart } from "@/components/admin/sales-chart";
 import { RANGES, type Granularity, type RangeKey } from "@/lib/admin/dashboard";
-import { getReport } from "@/lib/admin/reports";
+import { getReport, getSearchInsights } from "@/lib/admin/reports";
 import { requireStaff } from "@/lib/auth/dal";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
   const sp = await searchParams;
   const range = (RANGES.some((r) => r.key === sp.range) ? sp.range : "30d") as RangeKey;
   const view = (VIEWS.some((v) => v.key === sp.view) ? sp.view : range === "12m" ? "monthly" : range === "90d" ? "weekly" : "daily") as Granularity;
-  const r = await getReport(range, view);
+  const [r, searches] = await Promise.all([getReport(range, view), getSearchInsights(range)]);
   const href = (rk: string, v: string) => `/admin/reports?range=${rk}&view=${v}`;
   const maxCat = Math.max(...r.topCategories.map((c) => c.revenue), 1);
 
@@ -109,6 +109,45 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
                 </tbody>
               </table>
             </div>
+          )}
+        </Card>
+
+        <Card title="Top searches" action={<span className="text-xs font-semibold text-ink/50">{searches.total} searches</span>}>
+          {searches.top.length === 0 ? (
+            <AdminEmpty Icon={Search} title="No searches yet" text="What shoppers type into the shop search will appear here." />
+          ) : (
+            <div className="-m-5 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className={tableHead}><tr><th className={th}>Search</th><th className={`${th} text-right`}>Times</th><th className={`${th} text-right`}>Results</th></tr></thead>
+                <tbody className="divide-y divide-ink/5">
+                  {searches.top.map((s) => (
+                    <tr key={s.query}>
+                      <td className={td}><a href={`/shop?q=${encodeURIComponent(s.query)}`} target="_blank" className="font-semibold hover:text-brand">“{s.query}”</a></td>
+                      <td className={`${td} text-right tabular-nums`}>{s.searches}</td>
+                      <td className={cn(td, "text-right tabular-nums", s.lastResults === 0 && "font-bold text-red-600")}>{s.lastResults}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        <Card title="Searches with no results">
+          {searches.noResults.length === 0 ? (
+            <AdminEmpty Icon={SearchX} title="Nothing missing so far" text="When shoppers search for something you don't stock, it shows up here. These are great ideas for new products." />
+          ) : (
+            <>
+              <p className="mb-3 text-xs text-ink/55">Shoppers looked for these but found nothing. Consider stocking them, or adding these words to product names and descriptions.</p>
+              <ul className="space-y-2">
+                {searches.noResults.map((s) => (
+                  <li key={s.query} className="flex items-center justify-between rounded-lg bg-red-50 px-3 py-2 text-sm">
+                    <span className="font-semibold">“{s.query}”</span>
+                    <span className="text-xs font-bold text-red-700">{s.searches} {s.searches === 1 ? "search" : "searches"}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </Card>
 

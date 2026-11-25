@@ -6,8 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { initializeTransaction, paystackConfigured } from "@/lib/payments/paystack";
 
 import { getProductsByIds, effectivePrice } from "@/lib/catalog";
-import { NIGERIAN_STATES, deliveryMethodsFor } from "@/lib/delivery";
-import { getDeliveryMethodsFresh } from "@/lib/delivery-data";
+import { NIGERIAN_STATES, chargeFor, deliveryMethodsFor } from "@/lib/delivery";
+import { getDeliveryMethodsFresh, getFreeDeliveryUntilFresh } from "@/lib/delivery-data";
 import { formatPrice } from "@/lib/format";
 import { checkCoupon, type CouponLine } from "@/lib/coupons";
 
@@ -65,10 +65,17 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
   if ((values.fullName ?? "").length < 2) errors.fullName = "Please enter your full name.";
   if (!EMAIL.test(values.email ?? "")) errors.email = "Please enter a valid email address.";
   if (!NG_PHONE.test((values.phone ?? "").replace(/[\s-]/g, ""))) errors.phone = "Please enter a valid Nigerian phone number, e.g. 0803 123 4567.";
+  const [allMethods, freeUntil] = await Promise.all([getDeliveryMethodsFresh(), getFreeDeliveryUntilFresh()]);
+  const method = deliveryMethodsFor(allMethods, values.state).find((m) => m.id === values.deliveryMethod);
+  const pickup = !!method?.isPickup;
+  if (pickup) {
+    // Pickup orders keep the store's pickup point as their "address".
+    values.address = `Store pickup: ${method!.pickupAddress}`;
+    values.city = values.city || "Pickup";
+  }
   if ((values.address ?? "").length < 5) errors.address = "Please enter your delivery address.";
   if (!NIGERIAN_STATES.includes(values.state as (typeof NIGERIAN_STATES)[number])) errors.state = "Please choose your state.";
   if ((values.city ?? "").length < 2) errors.city = "Please enter your city or LGA.";
-  const method = deliveryMethodsFor(await getDeliveryMethodsFresh(), values.state).find((m) => m.id === values.deliveryMethod);
   if (!method) errors.deliveryMethod = "Please choose a delivery option.";
 
   // Parse the cart lines the browser sent (ids + quantities only).
@@ -132,7 +139,8 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
     couponId = coupon.couponId;
   }
 
-  const delivery = method!.fee;
+  // Pickup is always free; delivery is free while the launch offer runs.
+  const delivery = chargeFor(method!, freeUntil);
   const total = subtotal - discount + delivery;
 
   if (!paystackConfigured()) {
