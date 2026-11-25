@@ -8,7 +8,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
       <aside className="relative hidden overflow-hidden bg-brand p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="flex items-center gap-3">
           <span className="rounded-2xl bg-white px-3 py-2">
-            <Image src="/images/logo.png" alt="Kiddies Accessories" width={508} height={151} className="h-8 w-auto" preload />
+            <Image src="/images/logo.png" alt="Kiddies Accessories" width={900} height={550} className="h-14 w-auto" preload />
           </span>
           <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wider">Admin</span>
         </div>
@@ -28,7 +28,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
 
       <section className="flex items-center justify-center px-5 py-12">
         <div className="w-full max-w-sm">
-          <Image src="/images/logo.png" alt="Kiddies Accessories" width={508} height={151} className="mb-10 h-10 w-auto lg:hidden" />
+          <Image src="/images/logo.png" alt="Kiddies Accessories" width={900} height={550} className="mb-8 h-16 w-auto lg:hidden" />
           <h1 className="text-2xl font-extrabold text-ink">{title}</h1>
           <p className="mt-1.5 text-sm text-ink/60">{subtitle}</p>
           <div className="mt-8">{children}</div>

@@ -52,7 +52,7 @@ export function AdminShell({
   const sidebar = (
     <nav aria-label="Admin" className="flex h-full flex-col">
       <div className="flex h-16 items-center gap-2 border-b border-ink/10 px-5">
-        <Image src="/images/logo.png" alt="Kiddies Accessories" width={508} height={151} className="h-8 w-auto" />
+        <Image src="/images/logo.png" alt="Kiddies Accessories" width={900} height={550} className="h-11 w-auto" />
         <span className="rounded bg-brand/10 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-brand">Admin</span>
       </div>
       <ul className="flex-1 space-y-0.5 overflow-y-auto p-3">

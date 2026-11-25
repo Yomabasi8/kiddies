@@ -31,7 +31,7 @@ export function ProductShowcase({ products, categories }: { products: Product[];
   return (
     <section aria-labelledby="products-heading" className="relative bg-white pb-20 pt-10 sm:pb-28 sm:pt-14">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <SectionHeading id="products-heading" eyebrow="Our Products" title="Handpicked for Little Ones" />
+        <SectionHeading id="products-heading" eyebrow="Our Products" title="Handpicked for Your Little Ones" />
 
         {/* Filter chips with a sliding highlight */}
         <div role="group" aria-label="Filter products" className="-mx-4 mt-7 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">

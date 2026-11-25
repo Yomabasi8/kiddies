@@ -178,7 +178,7 @@ export function Hero() {
         </motion.div>
 
         <PhotoCard parallax={leftCard} className="left-0 top-0 z-10 w-[50%]" fromX="50%" rotate={0} floatDelay={0} delay={1.4} src="/images/siblings.png" width={988} height={1083} alt="Two young children stacking colourful wooden blocks" />
-        <PhotoCard parallax={rightCard} className="right-0 top-[2%] z-10 w-[50%]" fromX="-50%" rotate={28} floatDelay={1.2} delay={1.5} src="/images/siblings.png" width={988} height={1083} alt="" />
+        <PhotoCard parallax={rightCard} className="right-0 top-[2%] z-10 w-[50%]" fromX="-50%" rotate={0} floatDelay={1.2} delay={1.5} src="/images/reading.png" width={1677} height={1764} alt="Two girls reading a picture book together" />
         <PhotoCard
           parallax={centerCard}
           className="left-[27.5%] top-[11%] z-30 w-[45%]"
@@ -187,10 +187,10 @@ export function Hero() {
           floatDelay={0.6}
           delay={1.25}
           preload
-          src="/images/kids-playing.png"
+          src="/images/boy-playing.png"
           width={1195}
           height={1433}
-          alt="Two toddlers playing with bright stacking cups"
+          alt="A young boy playing with a toy train set"
           peek
         />
       </div>

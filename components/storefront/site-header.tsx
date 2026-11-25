@@ -64,10 +64,10 @@ export function SiteHeader() {
             <Image
               src="/images/logo.png"
               alt="Kiddies Accessories"
-              width={508}
-              height={151}
+              width={900}
+              height={550}
               preload
-              className="h-9 w-auto sm:h-11"
+              className="h-[54px] w-auto sm:h-[64px]"
             />
           </motion.span>
         </Link>
