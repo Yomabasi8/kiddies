@@ -53,7 +53,7 @@ export const effectivePrice = (p: Product) => p.salePrice ?? p.price;
 // ---------------------------------------------------------------------------
 // Row mapping
 // ---------------------------------------------------------------------------
-const ICONS: CategoryIconKey[] = ["plate", "cutlery", "bottle", "cup", "bib", "lunchbox", "educational", "puzzle", "other"];
+const ICONS: CategoryIconKey[] = ["plate", "cutlery", "bottle", "cup", "bib", "lunchbox", "educational", "puzzle", "book", "bath", "other"];
 const ACCENTS: Accent[] = ["mint", "peach", "sky", "butter", "lilac", "blush"];
 
 type CategoryRow = {

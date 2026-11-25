@@ -12,8 +12,8 @@ export type StoreSettings = {
   whatsapp: string | null;
   address: string | null;
   socials: { instagram?: string; facebook?: string; tiktok?: string; x?: string };
-  /** Launch offer: free delivery on every order until this time. */
-  free_delivery_until: string | null;
+  /** Free delivery for this many days from a customer's first paid order (0 = off). */
+  free_delivery_first_days: number;
 };
 
 /** Public store details (contact info, socials) for the storefront. */
@@ -23,8 +23,8 @@ export async function getStoreSettings(): Promise<StoreSettings> {
   cacheLife("hours");
   const { data } = await createPublicClient()
     .from("store_settings")
-    .select("store_name, logo_url, email, phone, whatsapp, address, socials, free_delivery_until")
+    .select("store_name, logo_url, email, phone, whatsapp, address, socials, free_delivery_first_days")
     .eq("id", 1)
     .maybeSingle();
-  return (data as StoreSettings | null) ?? { store_name: "Kiddies Accessories", logo_url: null, email: null, phone: null, whatsapp: null, address: null, socials: {}, free_delivery_until: null };
+  return (data as StoreSettings | null) ?? { store_name: "Kiddies Accessories", logo_url: null, email: null, phone: null, whatsapp: null, address: null, socials: {}, free_delivery_first_days: 0 };
 }

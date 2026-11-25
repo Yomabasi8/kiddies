@@ -7,7 +7,8 @@ import { initializeTransaction, paystackConfigured } from "@/lib/payments/paysta
 
 import { getProductsByIds, effectivePrice } from "@/lib/catalog";
 import { NIGERIAN_STATES, chargeFor, deliveryMethodsFor } from "@/lib/delivery";
-import { getDeliveryMethodsFresh, getFreeDeliveryUntilFresh } from "@/lib/delivery-data";
+import { getDeliveryMethodsFresh, getFreeDeliveryDaysFresh } from "@/lib/delivery-data";
+import { isInFirstMonth } from "@/lib/free-delivery";
 import { formatPrice } from "@/lib/format";
 import { checkCoupon, type CouponLine } from "@/lib/coupons";
 
@@ -65,7 +66,7 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
   if ((values.fullName ?? "").length < 2) errors.fullName = "Please enter your full name.";
   if (!EMAIL.test(values.email ?? "")) errors.email = "Please enter a valid email address.";
   if (!NG_PHONE.test((values.phone ?? "").replace(/[\s-]/g, ""))) errors.phone = "Please enter a valid Nigerian phone number, e.g. 0803 123 4567.";
-  const [allMethods, freeUntil] = await Promise.all([getDeliveryMethodsFresh(), getFreeDeliveryUntilFresh()]);
+  const [allMethods, freeDays] = await Promise.all([getDeliveryMethodsFresh(), getFreeDeliveryDaysFresh()]);
   const method = deliveryMethodsFor(allMethods, values.state).find((m) => m.id === values.deliveryMethod);
   const pickup = !!method?.isPickup;
   if (pickup) {
@@ -139,8 +140,9 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
     couponId = coupon.couponId;
   }
 
-  // Pickup is always free; delivery is free while the launch offer runs.
-  const delivery = chargeFor(method!, freeUntil);
+  // Pickup is always free; delivery is free in a customer's first month with us.
+  const firstMonth = await isInFirstMonth(values.email ?? null, values.phone ?? null, freeDays);
+  const delivery = chargeFor(method!, firstMonth);
   const total = subtotal - discount + delivery;
 
   if (!paystackConfigured()) {
@@ -227,4 +229,20 @@ export async function previewCoupon(code: string, cart: { productId: string; qua
   }
   const r = await checkCoupon(String(code ?? "").slice(0, 32), couponLines, EMAIL.test(email) ? email.toLowerCase() : null);
   return r.ok ? { ok: true, code: r.code, discount: r.discount, description: r.description } : r;
+}
+
+/**
+ * Checkout preview: does this email/phone get first-month free delivery?
+ * Answers only yes/no for the details the shopper typed themselves.
+ * The order total is always recomputed on submit.
+ */
+export async function previewFreeDelivery(email: string, phone: string): Promise<boolean> {
+  const e = String(email ?? "").trim().toLowerCase();
+  const p = String(phone ?? "").replace(/[\s-]/g, "");
+  if (!EMAIL.test(e) || !NG_PHONE.test(p)) return false;
+  try {
+    return await isInFirstMonth(e, p, await getFreeDeliveryDaysFresh());
+  } catch {
+    return false;
+  }
 }

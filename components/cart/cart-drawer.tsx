@@ -101,7 +101,7 @@ export function CartDrawer() {
                     <div className="flex justify-between text-sm">
                       <dt className="text-ink/55">Delivery</dt>
                       {offer.active ? (
-                        <dd className="font-bold text-brand">Free until {offer.ends}</dd>
+                        <dd className="font-bold text-brand">Free in your first month</dd>
                       ) : (
                         <dd className="text-ink/55">Calculated at checkout</dd>
                       )}

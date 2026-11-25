@@ -209,17 +209,20 @@ export function AccountPanel({ email }: { email: string }) {
   );
 }
 
-export function OfferPickupForm({ initial, canEdit }: { initial: { freeUntil: string; pickupAddress: string; pickupHours: string }; canEdit: boolean }) {
+export function OfferPickupForm({ initial, canEdit }: { initial: { offerOn: boolean; days: string; pickupAddress: string; pickupHours: string }; canEdit: boolean }) {
   const [v, setV] = useState(initial);
   const [r, setR] = useState<SettingsResult | null>(null);
   const [pending, start] = useTransition();
   return (
     <form onSubmit={(e) => { e.preventDefault(); start(async () => setR(await saveOfferAndPickup(v))); }} className="space-y-4">
-      <L label="Free delivery until" hint="Every order ships free until the end of this day (Nigeria time). Clear it to end the offer.">
-        <input type="date" className={field} value={v.freeUntil} disabled={!canEdit} onChange={(e) => setV({ ...v, freeUntil: e.target.value })} />
-      </L>
-      {canEdit && v.freeUntil && (
-        <button type="button" onClick={() => setV({ ...v, freeUntil: "" })} className="text-xs font-bold text-red-600 hover:underline">End the offer</button>
+      <label className="flex cursor-pointer items-center justify-between gap-3 text-sm font-semibold">
+        Free delivery for new customers
+        <input type="checkbox" role="switch" checked={v.offerOn} disabled={!canEdit} onChange={(e) => setV({ ...v, offerOn: e.target.checked })} className="size-5 accent-[#086f54]" />
+      </label>
+      {v.offerOn && (
+        <L label="For how many days?" hint="Counted from each customer's first paid order. They're recognised by email or phone.">
+          <input className={field} inputMode="numeric" value={v.days} disabled={!canEdit} onChange={(e) => setV({ ...v, days: e.target.value.replace(/\D/g, "") })} />
+        </L>
       )}
       <div className="border-t border-ink/10 pt-4">
         <L label="Pickup address" hint="Customers can choose free pickup once this is filled in.">

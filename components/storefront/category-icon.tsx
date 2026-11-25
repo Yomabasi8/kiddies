@@ -1,5 +1,7 @@
 import {
   Baby,
+  Bath,
+  BookOpen,
   Blocks,
   CupSoda,
   Milk,
@@ -21,6 +23,8 @@ const ICONS: Record<CategoryIconKey, React.ComponentType<LucideProps>> = {
   lunchbox: Sandwich,
   educational: Blocks,
   puzzle: Puzzle,
+  book: BookOpen,
+  bath: Bath,
   other: Baby,
 };
 

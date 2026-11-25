@@ -180,7 +180,7 @@ export function ProductDetailView({ product, category }: { product: ProductDetai
             <ShieldCheck className="size-5 text-brand" /> Secure checkout
           </li>
           <li className="flex items-center gap-2">
-            <Package className="size-5 text-brand" /> {offer.active ? `Free delivery until ${offer.ends}` : "Delivery fee shown at checkout"}
+            <Package className="size-5 text-brand" /> {offer.active ? "Free delivery in your first month" : "Delivery fee shown at checkout"}
           </li>
           <li className="flex items-center gap-2">
             <Sparkles className="size-5 text-brand" /> No account needed

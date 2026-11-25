@@ -4,6 +4,7 @@ import Link from "next/link";
 import { startTransition, useActionState, useState } from "react";
 import { AlertCircle, Archive, Eye, Loader2, Plus, Trash2, Wand2, X } from "lucide-react";
 import { archiveProduct, deleteProduct, generateSku, saveProduct, type ProductFormState } from "@/lib/admin/product-actions";
+import { quickCreateCategory } from "@/lib/admin/category-actions";
 import {
   PRODUCT_TYPES,
   SHOWS_CAPACITY,
@@ -20,7 +21,11 @@ import { StatusBadge, btn, field } from "./ui";
 
 type Category = { id: string; name: string };
 
-export function ProductForm({ initial, categories }: { initial: ProductFormValues; categories: Category[] }) {
+export function ProductForm({ initial, categories: initialCategories }: { initial: ProductFormValues; categories: Category[] }) {
+  const [categories, setCategories] = useState(initialCategories);
+  const [newCat, setNewCat] = useState<string | null>(null);
+  const [newCatMsg, setNewCatMsg] = useState("");
+  const [newCatBusy, setNewCatBusy] = useState(false);
   const [v, setV] = useState(initial);
   const [slugTouched, setSlugTouched] = useState(!!initial.id);
   const [state, action, pending] = useActionState(saveProduct, { status: "idle" } as ProductFormState);
@@ -122,11 +127,52 @@ export function ProductForm({ initial, categories }: { initial: ProductFormValue
               {err("sku") ?? (skuHint || "Your internal product code. Must be unique.")}
             </span>
           </div>
-          <Field label="Category" error={err("categoryId")}>
-            <select className={field} value={v.categoryId} aria-invalid={!!err("categoryId")} onChange={(e) => set("categoryId", e.target.value)}>
-              <option value="">Choose a category</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+          <Field label="Category" error={err("categoryId")} hint={newCatMsg || "Pick one, or choose “+ Add a new category…”"}>
+            {newCat === null ? (
+              <select
+                className={field}
+                value={v.categoryId}
+                aria-invalid={!!err("categoryId")}
+                onChange={(e) => {
+                  if (e.target.value === "__new") { setNewCat(""); setNewCatMsg(""); }
+                  else set("categoryId", e.target.value);
+                }}
+              >
+                <option value="">Choose a category</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                <option value="__new">+ Add a new category…</option>
+              </select>
+            ) : (
+              <span className="flex gap-2">
+                <input
+                  autoFocus
+                  className={field}
+                  value={newCat}
+                  placeholder="New category name, e.g. Books"
+                  aria-label="New category name"
+                  onChange={(e) => setNewCat(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLButtonElement | null)?.click(); } if (e.key === "Escape") setNewCat(null); }}
+                />
+                <button
+                  type="button"
+                  disabled={newCatBusy || newCat.trim().length < 2}
+                  className={cn(btn.primary, "shrink-0 px-3")}
+                  onClick={async () => {
+                    setNewCatBusy(true);
+                    const r = await quickCreateCategory(newCat);
+                    setNewCatBusy(false);
+                    if (!r.ok) return setNewCatMsg(r.message);
+                    setCategories((cs) => (cs.some((c) => c.id === r.id) ? cs : [...cs, { id: r.id, name: r.name }]));
+                    set("categoryId", r.id);
+                    setNewCat(null);
+                    setNewCatMsg(`“${r.name}” selected. Add an image and icon for it later in Categories.`);
+                  }}
+                >
+                  {newCatBusy ? "…" : "Add"}
+                </button>
+                <button type="button" onClick={() => setNewCat(null)} className={cn(btn.secondary, "shrink-0 px-3")} aria-label="Cancel new category">✕</button>
+              </span>
+            )}
           </Field>
           <Field label="Product type" hint="Decides which details are shown below" error={err("productType")}>
             <select className={field} value={v.productType} aria-invalid={!!err("productType")} onChange={(e) => set("productType", e.target.value)}>

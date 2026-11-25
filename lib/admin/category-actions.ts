@@ -84,3 +84,31 @@ export async function restoreCategory(id: string) {
   updateTag(CATALOG_TAG);
   redirect(`/admin/categories/${id}`);
 }
+
+/**
+ * Create a category straight from the product form. Returns the new (or
+ * existing, if the name is already taken) category so it can be selected.
+ * Image, icon and colour can be refined later in Admin → Categories.
+ */
+export async function quickCreateCategory(rawName: string): Promise<{ ok: true; id: string; name: string } | { ok: false; message: string }> {
+  const actor = await requireStaff();
+  const name = rawName.trim().replace(/\s+/g, " ").slice(0, 80);
+  const slug = slugify(name);
+  if (name.length < 2 || !slug) return { ok: false, message: "Enter a category name (at least 2 characters)." };
+  const db = createAdminClient();
+  const { data: existing } = await db.from("categories").select("id, name, archived_at").eq("slug", slug).maybeSingle();
+  if (existing) {
+    if (existing.archived_at) return { ok: false, message: `“${existing.name}” exists but is archived. Restore it in Admin → Categories.` };
+    return { ok: true, id: existing.id, name: existing.name };
+  }
+  const { data: last } = await db.from("categories").select("sort_order").order("sort_order", { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await db
+    .from("categories")
+    .insert({ name, slug, icon: "other", accent: "mint", is_visible: true, sort_order: (last?.sort_order ?? 0) + 1 })
+    .select("id, name")
+    .single();
+  if (error) return { ok: false, message: "Couldn't create the category. Please try again." };
+  await audit(actor, "category.create", "category", data.id, { name, via: "product form" });
+  updateTag(CATALOG_TAG);
+  return { ok: true, id: data.id, name: data.name };
+}

@@ -40,12 +40,12 @@ export default async function SettingsPage() {
               initial={{ store_name: s?.store_name ?? "", email: s?.email ?? "", phone: s?.phone ?? "", whatsapp: s?.whatsapp ?? "", address: s?.address ?? "", instagram: socials.instagram ?? "", facebook: socials.facebook ?? "", tiktok: socials.tiktok ?? "", x: socials.x ?? "" }}
             />
           </Card>
-          <Card title="Launch offer & pickup">
+          <Card title="Free delivery & pickup">
             <OfferPickupForm
               canEdit={isAdmin}
               initial={{
-                // Show the end date as a Nigeria-time calendar day.
-                freeUntil: s?.free_delivery_until ? new Date(new Date(s.free_delivery_until).getTime() + 3_600_000).toISOString().slice(0, 10) : "",
+                offerOn: (s?.free_delivery_first_days ?? 0) > 0,
+                days: String(s?.free_delivery_first_days || 30),
                 pickupAddress: s?.pickup_address ?? "",
                 pickupHours: s?.pickup_hours ?? "",
               }}

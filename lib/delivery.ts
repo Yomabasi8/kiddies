@@ -29,18 +29,10 @@ export type DeliveryMethod = {
   pickupHours?: string | null;
 };
 
-/** True while the launch free-delivery offer is running. */
-export function freeDeliveryActive(until: string | null | undefined, now = Date.now()) {
-  return !!until && new Date(until).getTime() > now;
-}
-
-/** What the customer actually pays for this method right now. */
-export function chargeFor(method: DeliveryMethod, freeUntil: string | null | undefined, now = Date.now()) {
-  return method.isPickup || freeDeliveryActive(freeUntil, now) ? 0 : method.fee;
-}
-
-export function formatOfferEnd(until: string) {
-  return new Date(until).toLocaleDateString("en-NG", { day: "numeric", month: "long", timeZone: "Africa/Lagos" });
+/** What the customer pays for this method: pickup is free, and so is delivery
+ *  during a customer's first month (decided on the server). */
+export function chargeFor(method: DeliveryMethod, freeDelivery: boolean) {
+  return method.isPickup || freeDelivery ? 0 : method.fee;
 }
 
 /** Seed data only. Do not read at runtime. */

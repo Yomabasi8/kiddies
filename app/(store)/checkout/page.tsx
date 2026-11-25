@@ -16,7 +16,7 @@ export default async function CheckoutPage() {
         crumbs={[{ href: "/", label: "Home" }, { href: "/cart", label: "Cart" }, { label: "Checkout" }]}
       />
       <div className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6">
-        <CheckoutView deliveryMethods={deliveryMethods} freeDeliveryUntil={store.free_delivery_until} />
+        <CheckoutView deliveryMethods={deliveryMethods} freeDeliveryDays={store.free_delivery_first_days} />
       </div>
     </main>
   );

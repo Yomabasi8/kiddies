@@ -54,8 +54,8 @@ export function CartPageView() {
 
       <aside aria-labelledby="summary-heading" className="h-fit rounded-[32px] border-[3px] border-ink bg-white p-7 shadow-[0_8px_0_0_#1b1b1b] lg:sticky lg:top-32">
         <h2 id="summary-heading" className="font-display text-2xl font-semibold">Order summary</h2>
-        <OrderSummaryTotals subtotal={subtotal} delivery={offer.active ? 0 : null} className="mt-6" />
-        {offer.active && <p className="mt-2 text-xs font-bold text-brand">Launch offer: free delivery until {offer.ends}.</p>}
+        <OrderSummaryTotals subtotal={subtotal} delivery={null} className="mt-6" />
+        {offer.active && <p className="mt-2 text-xs font-bold text-brand">New here? Delivery is free in your first month with us. We&apos;ll confirm at checkout.</p>}
         <motion.div whileHover={{ y: -2 }} whileTap={{ y: 4 }} className="mt-7">
           <Link href="/checkout" className="flex h-13 items-center justify-center rounded-xl bg-coral py-3.5 text-[15px] font-bold text-white shadow-pop">
             Proceed to checkout

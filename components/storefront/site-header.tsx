@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
+import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from "motion/react";
+import { ANNOUNCEMENT_HEIGHT } from "./announcement-bar";
 import { Menu, Search, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CartButton } from "@/components/cart/cart-button";
@@ -32,13 +33,16 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const { scrollY } = useScroll();
   useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 40));
+  // Sit just below the announcement bar, sliding up as it scrolls away.
+  const top = useTransform(scrollY, (y) => Math.max(0, ANNOUNCEMENT_HEIGHT - y));
 
   return (
     <motion.header
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 120, damping: 16, delay: 0.1 }}
-      className="fixed inset-x-0 top-0 z-40"
+      style={{ top }}
+      className="fixed inset-x-0 z-40"
     >
       <div
         className={cn(

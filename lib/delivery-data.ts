@@ -47,8 +47,8 @@ export async function getDeliveryMethodsFresh(): Promise<DeliveryMethod[]> {
   return load();
 }
 
-/** Uncached launch-offer end date, for pricing an order on the server. */
-export async function getFreeDeliveryUntilFresh(): Promise<string | null> {
-  const { data } = await createPublicClient().from("store_settings").select("free_delivery_until").eq("id", 1).maybeSingle();
-  return data?.free_delivery_until ?? null;
+/** Uncached length of the new-customer free-delivery offer (0 = off). */
+export async function getFreeDeliveryDaysFresh(): Promise<number> {
+  const { data } = await createPublicClient().from("store_settings").select("free_delivery_first_days").eq("id", 1).maybeSingle();
+  return data?.free_delivery_first_days ?? 0;
 }

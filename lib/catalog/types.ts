@@ -14,6 +14,8 @@ export type CategoryIconKey =
   | "lunchbox"
   | "educational"
   | "puzzle"
+  | "book"
+  | "bath"
   | "other";
 
 /**

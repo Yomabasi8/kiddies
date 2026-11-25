@@ -2,26 +2,34 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { startTransition, useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle, CreditCard, Info, Lock, MapPin, ShoppingBag, Tag, Truck, UserRound, X } from "lucide-react";
-import { previewCoupon, submitCheckout, type CheckoutField, type CheckoutState, type CouponPreview } from "@/lib/checkout/actions";
+import { previewCoupon, previewFreeDelivery, submitCheckout, type CheckoutField, type CheckoutState, type CouponPreview } from "@/lib/checkout/actions";
 import { selectSubtotal, useCart } from "@/lib/cart-store";
-import { NIGERIAN_STATES, chargeFor, deliveryMethodsFor, formatOfferEnd, freeDeliveryActive, type DeliveryMethod } from "@/lib/delivery";
+import { NIGERIAN_STATES, chargeFor, deliveryMethodsFor, type DeliveryMethod } from "@/lib/delivery";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCartHydrated } from "@/components/cart/cart-button";
 import { OrderSummaryTotals } from "@/components/cart/order-summary";
 import { EmptyState } from "@/components/storefront/empty-state";
-import { useNow } from "@/components/storefront/offer-context";
 
 const initial: CheckoutState = { status: "idle" };
 
-export function CheckoutView({ deliveryMethods, freeDeliveryUntil }: { deliveryMethods: DeliveryMethod[]; freeDeliveryUntil: string | null }) {
-  // Browser clock for display; the server applies the same rule when pricing the order.
-  // While pre-rendering (no clock yet) 0 means "show the offer if one is set".
-  const now = useNow() ?? 0;
-  const offer = freeDeliveryActive(freeDeliveryUntil, now);
+export function CheckoutView({ deliveryMethods, freeDeliveryDays }: { deliveryMethods: DeliveryMethod[]; freeDeliveryDays: number }) {
+  const offerOn = freeDeliveryDays > 0;
+  // null = not checked yet. Display only: the server re-checks when pricing the order.
+  const [firstMonth, setFirstMonth] = useState<boolean | null>(null);
+  const lastChecked = useRef("");
+
+  async function checkFreeDelivery(form: HTMLFormElement | null) {
+    if (!offerOn || !form) return;
+    const email = (form.elements.namedItem("email") as HTMLInputElement | null)?.value.trim() ?? "";
+    const phone = (form.elements.namedItem("phone") as HTMLInputElement | null)?.value.trim() ?? "";
+    if (!email || !phone || `${email}|${phone}` === lastChecked.current) return;
+    lastChecked.current = `${email}|${phone}`;
+    setFirstMonth(await previewFreeDelivery(email, phone));
+  }
   const hydrated = useCartHydrated();
   const items = useCart((s) => s.items);
   const subtotal = useCart(selectSubtotal);
@@ -53,7 +61,7 @@ export function CheckoutView({ deliveryMethods, freeDeliveryUntil }: { deliveryM
   // Default to the first option for the chosen state.
   const method = methods.find((m) => m.id === methodId) ?? methods[0];
   const pickup = !!method?.isPickup;
-  const deliveryFee = method ? chargeFor(method, freeDeliveryUntil, now) : null;
+  const deliveryFee = method ? chargeFor(method, !!firstMonth) : null;
 
   // Apply the server's cart corrections (stock / price changes).
   useEffect(() => {
@@ -135,8 +143,8 @@ export function CheckoutView({ deliveryMethods, freeDeliveryUntil }: { deliveryM
 
               <Section step={1} title="Contact information">
                 <Field label="Full name" name="fullName" autoComplete="name" defaultValue={values.fullName} error={errors.fullName} className="sm:col-span-2" />
-                <Field label="Email address" name="email" type="email" autoComplete="email" defaultValue={values.email} error={errors.email} hint="We'll send your order confirmation here." />
-                <Field label="Phone number" name="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0803 123 4567" defaultValue={values.phone} error={errors.phone} />
+                <Field onBlur={(e) => checkFreeDelivery(e.currentTarget.form)} label="Email address" name="email" type="email" autoComplete="email" defaultValue={values.email} error={errors.email} hint="We'll send your order confirmation here." />
+                <Field onBlur={(e) => checkFreeDelivery(e.currentTarget.form)} label="Phone number" name="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0803 123 4567" defaultValue={values.phone} error={errors.phone} />
               </Section>
 
               <Section step={2} title="Delivery details">
@@ -178,9 +186,14 @@ export function CheckoutView({ deliveryMethods, freeDeliveryUntil }: { deliveryM
               <Section step={3} title="Delivery method">
                 <fieldset className="sm:col-span-2" aria-describedby={errors.deliveryMethod ? "method-error" : undefined}>
                   <legend className="sr-only">Delivery method</legend>
-                  {offer && freeDeliveryUntil && (
-                    <p className="mb-3 flex items-center gap-2 rounded-2xl bg-sunny/40 px-4 py-3 text-sm font-bold text-ink">
-                      <Truck className="size-4 shrink-0" /> Launch offer: free delivery on every order until {formatOfferEnd(freeDeliveryUntil)}.
+                  {offerOn && (
+                    <p role="status" className={cn("mb-3 flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold", firstMonth ? "bg-brand-light text-brand" : "bg-sunny/40 text-ink")}>
+                      <Truck className="size-4 shrink-0" />
+                      {firstMonth === true
+                        ? "It's your first month with us, so delivery is free!"
+                        : firstMonth === false
+                          ? "Free delivery is for customers in their first month with us."
+                          : "New here? Delivery is free in your first month with us. Enter your email and phone above to check."}
                     </p>
                   )}
                   {!region ? (
@@ -195,7 +208,7 @@ export function CheckoutView({ deliveryMethods, freeDeliveryUntil }: { deliveryM
                             <span className="text-sm text-ink/55">{m.description}</span>
                           </span>
                           <span className="text-right">
-                            {chargeFor(m, freeDeliveryUntil, now) === 0 ? (
+                            {chargeFor(m, !!firstMonth) === 0 ? (
                               <>
                                 <span className="block font-extrabold text-brand">Free</span>
                                 {m.fee > 0 && <span className="text-xs text-ink/40 line-through">{formatPrice(m.fee)}</span>}
