@@ -200,14 +200,16 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
       metadata: {
         order_id: created.order_id,
         order_reference: created.order_reference,
-        cancel_action: `${site}/checkout`,
+        // "Cancel" on Paystack's page comes back through our verification, which
+        // closes the order and tells the customer they haven't been charged.
+        cancel_action: `${site}/api/checkout/callback?reference=${paymentReference}`,
       },
     });
     paymentUrl = tx.authorization_url;
   } catch (err) {
     console.error("[checkout] starting payment failed", err);
+    // Also cancels the pending order.
     await db.rpc("mark_payment_unsuccessful", { p_reference: paymentReference, p_status: "failed", p_raw: null });
-    await db.rpc("admin_set_order_status", { p_order_id: created.order_id, p_to: "cancelled", p_note: "Payment could not be started", p_actor: null });
     return { status: "payment_error", values, message: "We couldn't connect to our payment provider. You haven't been charged. Please try again in a moment." };
   }
 
