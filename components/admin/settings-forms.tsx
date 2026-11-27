@@ -7,6 +7,7 @@ import {
   saveDeliveryMethod,
   saveNotifications,
   saveOfferAndPickup,
+  saveStoreStatus,
   signOutEverywhere,
   type DeliveryInput,
   type SettingsResult,
@@ -234,6 +235,51 @@ export function OfferPickupForm({ initial, canEdit }: { initial: { offerOn: bool
       </L>
       <Result r={r} />
       {canEdit && <button type="submit" disabled={pending} className={btn.primary}>{pending ? "Saving…" : "Save offer & pickup"}</button>}
+    </form>
+  );
+}
+
+export function StoreStatusForm({ initial, canEdit }: { initial: { closed: boolean; message: string; reopensOn: string }; canEdit: boolean }) {
+  const [v, setV] = useState(initial);
+  const [saved, setSaved] = useState(initial.closed);
+  const [r, setR] = useState<SettingsResult | null>(null);
+  const [pending, start] = useTransition();
+  const save = () =>
+    start(async () => {
+      const res = await saveStoreStatus(v);
+      setR(res);
+      if (res.ok) setSaved(v.closed);
+    });
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); save(); }} className="space-y-4">
+      <p className={cn("flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold", saved ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800")}>
+        <span className={cn("size-2.5 rounded-full", saved ? "bg-amber-500" : "bg-emerald-500")} aria-hidden="true" />
+        {saved ? "Closed: customers see the maintenance page" : "Open: customers can shop"}
+      </p>
+      <label className="flex cursor-pointer items-center justify-between gap-3 text-sm font-semibold">
+        Close the store (maintenance mode)
+        <input type="checkbox" role="switch" checked={v.closed} disabled={!canEdit} onChange={(e) => setV({ ...v, closed: e.target.checked })} className="size-5 accent-[#086f54]" />
+      </label>
+      <L label="Message for customers" hint="Optional. Shown on the maintenance page.">
+        <textarea
+          className={cn(field, "h-20 py-2")}
+          maxLength={300}
+          value={v.message}
+          disabled={!canEdit}
+          onChange={(e) => setV({ ...v, message: e.target.value })}
+          placeholder="e.g. New stock is on its way! We'll be back very soon."
+        />
+      </L>
+      <L label="Reopening date" hint="Optional. Leave empty if you're not sure yet.">
+        <input type="date" className={field} value={v.reopensOn} disabled={!canEdit} onChange={(e) => setV({ ...v, reopensOn: e.target.value })} />
+      </L>
+      <p className="text-xs text-ink/55">While closed, customers can still check existing orders on the Track Order page, and payments already in progress are still confirmed. The admin keeps working as normal.</p>
+      <Result r={r} />
+      {canEdit ? (
+        <button type="submit" disabled={pending} className={btn.primary}>{pending ? "Saving…" : v.closed ? "Save & close store" : "Save & open store"}</button>
+      ) : (
+        <p className="text-xs text-ink/50">Only administrators can change this.</p>
+      )}
     </form>
   );
 }

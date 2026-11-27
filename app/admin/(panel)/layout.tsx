@@ -13,15 +13,14 @@ export const instant = false;
 
 export default async function AdminPanelLayout({ children }: LayoutProps<"/admin">) {
   const user = await requireStaff();
-  const { data: notifications } = await createAdminClient()
-    .from("notifications")
-    .select("id, title, body, created_at")
-    .is("read_at", null)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  const db = createAdminClient();
+  const [{ data: notifications }, { data: store }] = await Promise.all([
+    db.from("notifications").select("id, title, body, created_at").is("read_at", null).order("created_at", { ascending: false }).limit(10),
+    db.from("store_settings").select("store_closed").eq("id", 1).maybeSingle(),
+  ]);
 
   return (
-    <AdminShell user={{ name: user.name, email: user.email, role: user.role }} notifications={notifications ?? []}>
+    <AdminShell user={{ name: user.name, email: user.email, role: user.role }} notifications={notifications ?? []} storeClosed={!!store?.store_closed}>
       {children}
     </AdminShell>
   );

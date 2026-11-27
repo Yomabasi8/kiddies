@@ -11,6 +11,7 @@ import { getDeliveryMethodsFresh, getFreeDeliveryDaysFresh } from "@/lib/deliver
 import { isInFirstMonth } from "@/lib/free-delivery";
 import { formatPrice } from "@/lib/format";
 import { checkCoupon, type CouponLine } from "@/lib/coupons";
+import { getStoreSettings } from "@/lib/store-settings";
 
 export type CheckoutField = "fullName" | "email" | "phone" | "address" | "state" | "city" | "instructions" | "deliveryMethod" | "coupon" | "cart";
 
@@ -41,13 +42,10 @@ const text = (fd: FormData, key: string, max = 200) => String(fd.get(key) ?? "")
  * catalogue (existence, stock, current price) and computes totals on the
  * server. Client-side prices are never trusted.
  *
- * Payment is the next integration step (Paystack or Flutterwave). Until a
- * provider is configured this stops before creating an order and says so;
- * it never reports a payment or order that didn't happen.
- *
- * TODO(supabase): create a pending order + payment record, then initialise
- * the provider transaction and redirect to its checkout URL. Mark the order
- * paid only after server-side verification or a verified webhook.
+ * Then records a pending order and sends the customer to Paystack. The
+ * order is marked paid only after server-side verification or a verified
+ * webhook (lib/payments/settle.ts). Without Paystack keys it stops before
+ * creating an order and says so. Refused while the store is closed.
  */
 export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promise<CheckoutState> {
   const values: CheckoutValues = {
@@ -61,6 +59,11 @@ export async function submitCheckout(_prev: CheckoutState, fd: FormData): Promis
     deliveryMethod: text(fd, "deliveryMethod", 40),
     coupon: text(fd, "coupon", 32).toUpperCase(),
   };
+
+  // Maintenance mode: refuse new orders even if a checkout page was already open.
+  if ((await getStoreSettings()).store_closed) {
+    return { status: "payment_error", values, message: "We're not taking orders right now. Nothing was placed and you haven't been charged. Please check back soon." };
+  }
 
   const errors: Partial<Record<CheckoutField, string>> = {};
   if ((values.fullName ?? "").length < 2) errors.fullName = "Please enter your full name.";

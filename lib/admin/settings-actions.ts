@@ -109,3 +109,26 @@ export async function saveOfferAndPickup(input: { offerOn: boolean; days: string
   revalidatePath("/admin/settings");
   return { ok: true, message: pickupAddress ? "Saved. Pickup is now offered at checkout." : "Saved. Pickup stays hidden until you add an address." };
 }
+
+/**
+ * Open or close the storefront. While closed, customers see the maintenance
+ * page and checkout refuses new orders (enforced in submitCheckout too).
+ */
+export async function saveStoreStatus(input: { closed: boolean; message: string; reopensOn: string }): Promise<SettingsResult> {
+  const actor = await requireAdmin();
+  const message = clean(input.message, 300);
+  const reopensOn = clean(input.reopensOn, 10);
+  if (reopensOn && (!/^\d{4}-\d{2}-\d{2}$/.test(reopensOn) || Number.isNaN(Date.parse(reopensOn)))) {
+    return { ok: false, message: "Choose a valid reopening date, or leave it empty." };
+  }
+  const row = { store_closed: !!input.closed, closed_message: message || null, reopens_on: reopensOn || null };
+  const { error } = await createAdminClient().from("store_settings").update(row).eq("id", 1);
+  if (error) return { ok: false, message: "Couldn't update the store status." };
+  await audit(actor, row.store_closed ? "store.close" : "store.open", "store_settings", "1", row);
+  updateTag(SETTINGS_TAG);
+  revalidatePath("/admin", "layout");
+  return {
+    ok: true,
+    message: row.store_closed ? "Store closed. Customers now see the maintenance page." : "Store open. Customers can shop again.",
+  };
+}

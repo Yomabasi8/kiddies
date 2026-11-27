@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CheckCircle2, CircleAlert } from "lucide-react";
 import { Card, PageTitle } from "@/components/admin/ui";
-import { AccountPanel, BusinessForm, DeliveryMethodsEditor, NotificationsForm, OfferPickupForm } from "@/components/admin/settings-forms";
+import { AccountPanel, BusinessForm, DeliveryMethodsEditor, NotificationsForm, OfferPickupForm, StoreStatusForm } from "@/components/admin/settings-forms";
 import { requireStaff } from "@/lib/auth/dal";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -34,6 +34,12 @@ export default async function SettingsPage() {
       <PageTitle title="Store Settings" description={isAdmin ? "Business details, delivery, payments and your account." : "Some settings can only be changed by an administrator."} />
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-6">
+          <Card title="Store status">
+            <StoreStatusForm
+              canEdit={isAdmin}
+              initial={{ closed: !!s?.store_closed, message: s?.closed_message ?? "", reopensOn: s?.reopens_on ?? "" }}
+            />
+          </Card>
           <Card title="Business information">
             <BusinessForm
               canEdit={isAdmin}

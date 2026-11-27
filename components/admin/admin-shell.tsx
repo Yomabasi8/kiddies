@@ -40,10 +40,13 @@ type Notification = { id: number; title: string; body: string | null; created_at
 export function AdminShell({
   user,
   notifications,
+  storeClosed = false,
   children,
 }: {
   user: { name: string; email: string; role: string };
   notifications: Notification[];
+  /** Shows a reminder bar while the storefront is in maintenance mode. */
+  storeClosed?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -126,6 +129,12 @@ export function AdminShell({
             </form>
           </div>
         </header>
+        {storeClosed && (
+          <p role="status" className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 sm:px-6 lg:px-8">
+            Your store is closed. Customers see the maintenance page and can&apos;t place orders.
+            <Link href="/admin/settings" className="underline underline-offset-2 hover:text-amber-950">Change in Store Settings</Link>
+          </p>
+        )}
         <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>
