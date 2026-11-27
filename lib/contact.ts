@@ -1,7 +1,8 @@
 /**
- * Where "Contact us" links go. The owner handles customer enquiries on
- * Instagram, so every Contact link (and the old /contact URL, see
- * next.config.ts) points here. Safe to import from client components.
+ * The owner handles customer enquiries on Instagram. The navbar links to
+ * the /contact page; the footer "Contact us" button, the contact page's
+ * main button and the order-confirmation help button go straight here.
+ * Safe to import from client components.
  */
 export const CONTACT_URL = "https://www.instagram.com/kiddiesaccesories/";
 

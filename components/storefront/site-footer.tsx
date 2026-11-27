@@ -5,7 +5,7 @@ import { CONTACT_URL, EXTERNAL_LINK } from "@/lib/contact";
 import { BallPit } from "./ball-pit";
 import { Wordmark } from "./wordmark";
 
-const COLUMNS: { title: string; links: { href: string; label: string; external?: boolean }[] }[] = [
+const COLUMNS = [
   {
     title: "Shop",
     links: [
@@ -21,7 +21,7 @@ const COLUMNS: { title: string; links: { href: string; label: string; external?:
       { href: "/track-order", label: "Track Order" },
       { href: "/shipping-policy", label: "Shipping Policy" },
       { href: "/returns-policy", label: "Returns Policy" },
-      { href: CONTACT_URL, label: "Contact Us", external: true },
+      { href: "/contact", label: "Contact Us" },
     ],
   },
   {
@@ -59,7 +59,6 @@ export async function SiteFooter() {
                   <li key={l.href}>
                     <Link
                       href={l.href}
-                      {...(l.external ? EXTERNAL_LINK : {})}
                       className="group inline-flex items-center gap-1 text-[15px] font-bold text-ink/80 transition-colors hover:text-ink"
                     >
                       <span className="bg-[linear-gradient(currentColor,currentColor)] bg-[length:0%_2px] bg-left-bottom bg-no-repeat pb-0.5 transition-[background-size] duration-300 group-hover:bg-[length:100%_2px]">
