@@ -9,14 +9,15 @@ import { ANNOUNCEMENT_HEIGHT } from "./announcement-bar";
 import { Menu, Search, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CartButton } from "@/components/cart/cart-button";
+import { CONTACT_URL, EXTERNAL_LINK } from "@/lib/contact";
 
-const NAV_LINKS = [
+const NAV_LINKS: { href: string; label: string; external?: boolean }[] = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
   { href: "/categories", label: "Categories" },
   { href: "/about", label: "About Us" },
-  { href: "/contact", label: "Contact" },
-] as const;
+  { href: CONTACT_URL, label: "Contact", external: true },
+];
 
 const ICON_LINKS = [
   { href: "/shop?focus=search", label: "Search products", Icon: Search },
@@ -78,12 +79,13 @@ export function SiteHeader() {
 
         {/* Desktop links */}
         <ul className="hidden items-center gap-1 md:flex lg:gap-3">
-          {NAV_LINKS.map(({ href, label }) => {
-            const active = isActive(pathname, href);
+          {NAV_LINKS.map(({ href, label, external }) => {
+            const active = !external && isActive(pathname, href);
             return (
               <li key={href}>
                 <Link
                   href={href}
+                  {...(external ? EXTERNAL_LINK : {})}
                   aria-current={active ? "page" : undefined}
                   className="group relative block px-3 py-2 text-[15px] font-bold text-ink"
                 >
@@ -157,8 +159,8 @@ export function SiteHeader() {
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
             className="absolute inset-x-4 top-full mt-3 origin-top rounded-3xl bg-white p-3 shadow-xl sm:inset-x-6 md:hidden"
           >
-            {NAV_LINKS.map(({ href, label }, i) => {
-              const active = isActive(pathname, href);
+            {NAV_LINKS.map(({ href, label, external }, i) => {
+              const active = !external && isActive(pathname, href);
               return (
                 <motion.li
                   key={href}
@@ -168,6 +170,7 @@ export function SiteHeader() {
                 >
                   <Link
                     href={href}
+                    {...(external ? EXTERNAL_LINK : {})}
                     onClick={() => setOpen(false)}
                     aria-current={active ? "page" : undefined}
                     className={cn(

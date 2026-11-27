@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { CONTACT_URL, EXTERNAL_LINK } from "@/lib/contact";
 import { Suspense } from "react";
 import { CheckCircle2, Clock, Package, RefreshCw, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/storefront/page-header";
@@ -45,7 +46,7 @@ async function OrderResult({ searchParams }: { searchParams: Promise<Record<stri
   if (!payment) {
     return (
       <Panel Icon={XCircle} tone="coral" title="We couldn't find that payment" text="If you completed a payment, check your email for your order reference, or contact us and we'll help.">
-        <Link href="/contact" className={primary}>Contact us</Link>
+        <Link href={CONTACT_URL} {...EXTERNAL_LINK} className={primary}>Contact us</Link>
       </Panel>
     );
   }
